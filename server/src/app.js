@@ -1,0 +1,50 @@
+require('dotenv').config();
+const express = require('express');
+const http = require('http'); // Import http module
+const { WebSocketServer } = require('ws'); // Import WebSocketServer
+const connectDB = require('./config/db'); // Import the Mongoose connection function
+const path = require('path'); // Import path module
+const cors = require('cors'); // Import cors
+const { initializeWebSocket } = require('./services/websocket.service'); // Import WebSocket initializer
+
+// Connect to Database
+connectDB();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Import Routers
+const authRoutes = require('./routes/auth.routes');
+const bookingRoutes = require('./routes/booking.routes'); // Import booking routes
+const providerRoutes = require('./routes/provider.routes'); // Import provider routes
+const chatRoutes = require('./routes/chat.routes'); // Import chat routes
+
+app.use(cors()); // Enable CORS for all routes
+app.use(express.json()); // Middleware to parse JSON bodies
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, '..', '..', 'public'))); // Corrected path
+
+// Basic route for testing
+app.get('/', (req, res) => {
+  res.send('Hello from the On-Demand Service Marketplace API!');
+});
+
+// Mount Routers
+app.use('/api/auth', authRoutes);
+app.use('/api/bookings', bookingRoutes); // Mount booking routes
+app.use('/api/providers', providerRoutes); // Mount provider routes
+app.use('/api/chats', chatRoutes); // Mount chat routes
+
+// TODO: Add routes for ratings etc.
+
+// --- Create HTTP and WebSocket Servers ---
+const server = http.createServer(app); 
+initializeWebSocket(server); // Initialize WebSocket handling
+
+// --- Start the HTTP server ---
+server.listen(PORT, () => { 
+  console.log(`Server (HTTP + WebSocket) is running on port ${PORT}`);
+});
+
+module.exports = app; // Keep exporting app for potential testing 
