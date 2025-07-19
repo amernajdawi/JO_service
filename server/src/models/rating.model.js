@@ -9,34 +9,59 @@ const ratingSchema = new Schema({
     booking: {
         type: Schema.Types.ObjectId,
         ref: 'Booking',
-        required: [true, 'Booking ID is required for a rating.'],
-        unique: true, // Ensures one rating per booking
-        index: true,
+        required: true
     },
     user: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: [true, 'User ID is required for a rating.'],
-        index: true,
+        required: true
     },
     provider: {
         type: Schema.Types.ObjectId,
         ref: 'Provider',
-        required: [true, 'Provider ID is required for a rating.'],
-        index: true,
+        required: true
     },
-    ratingStars: {
+    rating: {
         type: Number,
-        required: [true, 'Rating stars are required.'],
-        min: [1, 'Rating must be at least 1 star.'],
-        max: [5, 'Rating cannot be more than 5 stars.'],
+        required: true,
+        min: 1,
+        max: 5
     },
-    commentText: {
+    review: {
         type: String,
-        trim: true,
-        maxlength: [1000, 'Comment cannot exceed 1000 characters.'] // Optional: set a max length
+        required: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
-}, { timestamps: true }); // Adds createdAt and updatedAt
+}, { timestamps: true });
+
+// Create a compound index to ensure a user can only rate a booking once
+ratingSchema.index({ booking: 1, user: 1 }, { unique: true });
+
+// Method to calculate average rating for a provider
+ratingSchema.statics.calculateAverageRating = async function(providerId) {
+    const result = await this.aggregate([
+        { $match: { provider: new mongoose.Types.ObjectId(providerId) } },
+        { 
+            $group: { 
+                _id: "$provider", 
+                averageRating: { $avg: "$rating" },
+                totalRatings: { $sum: 1 }
+            } 
+        }
+    ]);
+    
+    if (result.length > 0) {
+        return {
+            averageRating: result[0].averageRating,
+            totalRatings: result[0].totalRatings
+        };
+    }
+    
+    return { averageRating: 0, totalRatings: 0 };
+};
 
 // Static method to calculate and update the provider's average rating
 ratingSchema.statics.calculateAndUpdateProviderRating = async function(providerId) {
@@ -54,7 +79,7 @@ ratingSchema.statics.calculateAndUpdateProviderRating = async function(providerI
         {
             $group: {
                 _id: '$provider',
-                averageRating: { $avg: '$ratingStars' },
+                averageRating: { $avg: '$rating' },
                 totalRatings: { $sum: 1 }
             }
         }

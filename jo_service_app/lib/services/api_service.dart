@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../models/provider_model.dart';
 import '../models/chat_message.model.dart';
+import '../models/user_model.dart';
 
 // New class to model the response from fetching a list of providers
 class ProviderListResponse {
@@ -49,9 +51,41 @@ class ApiService {
       Map<String, String>? queryParams) async {
     final String baseUrl = getBaseUrl();
     Uri uri = Uri.parse('$baseUrl/providers');
-    if (queryParams != null && queryParams.isNotEmpty) {
-      uri = uri.replace(queryParameters: queryParams);
+
+    // Prepare search parameters
+    final Map<String, String> searchParams = queryParams ?? {};
+
+    // If there's a search query, add it with explicit parameters for backend
+    if (searchParams.containsKey('search') &&
+        searchParams['search']!.isNotEmpty) {
+      final searchTerm = searchParams['search']!;
+
+      // Keep the search parameter for backwards compatibility
+      // Add a parameter telling the backend to do partial name matching
+      searchParams['partialNameMatch'] = 'true';
+
+      print('Searching with partial name match for: $searchTerm');
     }
+
+    // Add category filter if requested
+    if (searchParams.containsKey('category') &&
+        searchParams['category']!.isNotEmpty) {
+      print('Filtering by category: ${searchParams['category']}');
+    }
+
+    // Add location filter if requested
+    if (searchParams.containsKey('location') &&
+        searchParams['location']!.isNotEmpty) {
+      final location = searchParams['location']!;
+      // Add cityFilter parameter for the backend
+      searchParams['cityFilter'] = location;
+      print('Filtering by location: $location');
+    }
+
+    // Update the URI with all parameters
+    uri = uri.replace(queryParameters: searchParams);
+
+    print('Searching providers with URI: $uri');
 
     final response = await http.get(uri);
 
@@ -68,7 +102,7 @@ class ApiService {
   Future<Provider> getMyProviderProfile(String token) async {
     final String baseUrl = getBaseUrl();
     final response = await http.get(
-      Uri.parse('$baseUrl/providers/me'),
+      Uri.parse('$baseUrl/providers/profile/me'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -108,8 +142,8 @@ class ApiService {
   Future<Provider> updateMyProviderProfile(
       String token, Map<String, dynamic> data) async {
     final String baseUrl = getBaseUrl();
-    final response = await http.put(
-      Uri.parse('$baseUrl/providers/me'),
+    final response = await http.patch(
+      Uri.parse('$baseUrl/providers/profile'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -152,6 +186,145 @@ class ApiService {
     } else {
       throw Exception(
           'Failed to load chat history (Status Code: ${response.statusCode}, Body: ${response.body})');
+    }
+  }
+
+  // Add this method to upload profile picture
+  Future<Provider?> uploadProfilePicture(String token, File imageFile) async {
+    if (kIsWeb) {
+      throw Exception(
+          'Profile picture upload is not supported on web platform');
+    }
+
+    try {
+      final String baseUrl = getBaseUrl();
+      // Create multipart request
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/providers/profile-picture'),
+      );
+
+      // Add authorization header
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+      });
+
+      // Add file to request
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'profilePicture',
+          imageFile.path,
+        ),
+      );
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return Provider.fromJson(responseData['provider']);
+      } else {
+        print(
+            'Error uploading profile picture: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to upload profile picture: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Exception in uploadProfilePicture: $e');
+      throw Exception('Failed to upload profile picture: $e');
+    }
+  }
+
+  // Add this method to get user profile
+  Future<User> getMyUserProfile(String token) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/me'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return User.fromJson(json.decode(response.body));
+    } else {
+      throw Exception(
+          'Failed to load user profile (Status Code: ${response.statusCode}, Body: ${response.body})');
+    }
+  }
+
+  // Add this method to update user profile
+  Future<User> updateMyUserProfile(
+      String token, Map<String, dynamic> data) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/me'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      if (responseData['user'] != null) {
+        return User.fromJson(responseData['user']);
+      } else {
+        throw Exception('Failed to parse user data from update response.');
+      }
+    } else {
+      throw Exception(
+          'Failed to update user profile (Status Code: ${response.statusCode}, Body: ${response.body})');
+    }
+  }
+
+  // Add this method to upload user profile picture
+  Future<User?> uploadUserProfilePicture(String token, File imageFile) async {
+    if (kIsWeb) {
+      throw Exception(
+          'Profile picture upload is not supported on web platform');
+    }
+
+    try {
+      final String baseUrl = getBaseUrl();
+      // Create multipart request
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/users/me/profile-picture'),
+      );
+
+      // Add authorization header
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+      });
+
+      // Add file to request
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'profilePicture',
+          imageFile.path,
+        ),
+      );
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return User.fromJson(responseData['user']);
+      } else {
+        print(
+            'Error uploading profile picture: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to upload profile picture: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Exception in uploadUserProfilePicture: $e');
+      throw Exception('Failed to upload profile picture: $e');
     }
   }
 }

@@ -1,81 +1,139 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const Schema = mongoose.Schema;
 
 const SALT_ROUNDS = 10;
 
-// GeoJSON Point Schema for location
-const pointSchema = new mongoose.Schema({
-  type: {
-    type: String,
-    enum: ['Point'],
-    required: true,
-    default: 'Point'
-  },
-  coordinates: {
-    type: [Number], // [longitude, latitude]
-    required: true,
-    index: '2dsphere' // Create a geospatial index for location-based queries
-  }
+// Define valid service categories
+const validServiceCategories = [
+    'cleaning',
+    'home_repair',
+    'plumbing',
+    'electrical',
+    'gardening',
+    'moving',
+    'tutoring',
+    'pet_care',
+    'beauty',
+    'wellness',
+    'photography',
+    'graphic_design',
+    'web_development',
+    'legal',
+    'automotive',
+    'event_planning',
+    'personal_training',
+    'cooking',
+    'delivery',
+    'other'
+];
+
+// Define the location schema with GeoJSON point
+const locationSchema = new Schema({
+    type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point'
+    },
+    coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true
+    },
+    address: {
+        type: String,
+        trim: true
+    },
+    city: {
+        type: String,
+        trim: true
+    },
+    state: {
+        type: String,
+        trim: true
+    },
+    zipCode: {
+        type: String,
+        trim: true
+    },
+    country: {
+        type: String,
+        trim: true,
+        default: 'US'
+    }
 });
 
-const providerSchema = new mongoose.Schema({
+// Provider schema
+const providerSchema = new Schema({
     email: {
         type: String,
         required: [true, 'Email is required'],
         unique: true,
         trim: true,
         lowercase: true,
-        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
+        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email address']
     },
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters long'],
-        select: false // Exclude password by default when querying providers
+        minlength: [6, 'Password must be at least 6 characters long']
     },
     fullName: {
         type: String,
         required: [true, 'Full name is required'],
         trim: true
     },
-    companyName: {
+    phoneNumber: {
+        type: String,
+        trim: true
+    },
+    profilePictureUrl: {
+        type: String,
+        default: null
+    },
+    businessName: {
         type: String,
         trim: true
     },
     serviceType: {
         type: String,
         required: [true, 'Service type is required'],
-        trim: true,
-        // Example: enum: ['Electrician', 'Plumber', 'Carpenter', 'Blacksmith', 'Other']
-    },
-    hourlyRate: {
-        type: Number,
-        min: [0, 'Hourly rate cannot be negative']
-    },
-    location: {
-        point: pointSchema, // Embedded GeoJSON point
-        addressText: { type: String, trim: true } // Full textual address
-    },
-    contactInfo: {
-        phone: { type: String, trim: true }
-    },
-    availabilityDetails: { // e.g., "Mon-Fri 9am-5pm", or more structured if needed later
-        type: String,
         trim: true
     },
     serviceDescription: {
         type: String,
-        trim: true,
-        maxlength: [1000, 'Service description cannot exceed 1000 characters']
+        trim: true
     },
-    profilePictureUrl: {
+    serviceCategory: {
         type: String,
-        trim: true,
-        default: ''
+        enum: validServiceCategories,
+        default: 'other'
     },
-    isVerified: {
-        type: Boolean,
-        default: false
+    serviceTags: [{
+        type: String,
+        trim: true
+    }],
+    hourlyRate: {
+        type: Number,
+        min: 0
+    },
+    location: {
+        type: locationSchema,
+        default: null
+    },
+    // Service areas where the provider operates - could be zip codes or city names
+    serviceAreas: [{
+        type: String,
+        trim: true
+    }],
+    // Days and hours when the provider is available
+    availability: {
+        monday: { type: [String], default: [] },
+        tuesday: { type: [String], default: [] },
+        wednesday: { type: [String], default: [] },
+        thursday: { type: [String], default: [] },
+        friday: { type: [String], default: [] },
+        saturday: { type: [String], default: [] },
+        sunday: { type: [String], default: [] }
     },
     averageRating: {
         type: Number,
@@ -87,8 +145,70 @@ const providerSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         min: 0
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    accountStatus: {
+        type: String,
+        enum: ['active', 'suspended', 'deactivated'],
+        default: 'active'
+    },
+    // Fields to track document history
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
-}, { timestamps: true });
+}, {
+    timestamps: true, // Adds createdAt and updatedAt fields
+});
+
+// Create a 2dsphere index on the location field for geospatial queries
+providerSchema.index({ 'location.coordinates': '2dsphere' });
+
+// Create a text index for searching providers by various fields
+providerSchema.index({ 
+    fullName: 'text',
+    businessName: 'text',
+    serviceType: 'text',
+    serviceDescription: 'text',
+    serviceTags: 'text'
+}, {
+    weights: {
+        businessName: 10,
+        serviceType: 8,
+        fullName: 5,
+        serviceTags: 4,
+        serviceDescription: 3
+    },
+    name: 'provider_text_index'
+});
+
+// Create an index on service category for category filtering
+providerSchema.index({ serviceCategory: 1 });
+
+// Create an index on rating for sorting
+providerSchema.index({ averageRating: -1 });
+
+// Method to update the provider's location
+providerSchema.methods.updateLocation = async function(locationData) {
+    if (!locationData || !locationData.coordinates || locationData.coordinates.length !== 2) {
+        throw new Error('Invalid location data');
+    }
+    
+    this.location = {
+        type: 'Point',
+        coordinates: locationData.coordinates,
+        address: locationData.address,
+        city: locationData.city,
+        state: locationData.state,
+        zipCode: locationData.zipCode,
+        country: locationData.country || 'US'
+    };
+    
+    return await this.save();
+};
 
 // Pre-save hook to hash password
 providerSchema.pre('save', async function(next) {
@@ -106,9 +226,6 @@ providerSchema.pre('save', async function(next) {
 providerSchema.methods.comparePassword = async function(inputPassword) {
     return await bcrypt.compare(inputPassword, this.password);
 };
-
-// Compound index for searching by serviceType and location (if needed frequently)
-// providerSchema.index({ serviceType: 1, 'location.point': '2dsphere' });
 
 const Provider = mongoose.model('Provider', providerSchema);
 

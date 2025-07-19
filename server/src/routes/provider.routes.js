@@ -1,21 +1,40 @@
 const express = require('express');
 const ProviderController = require('../controllers/provider.controller');
 const { protectRoute, isProvider } = require('../middlewares/auth.middleware');
+const upload = require('../middlewares/upload.middleware');
 
 const router = express.Router();
 
-// GET /api/providers - List providers (accessible to any logged-in user or public)
-// For now, it's public as protectRoute was removed for UI testing
+// Public routes (no authentication required)
+// GET /api/providers - Get all providers (with pagination)
 router.get('/', ProviderController.getAllProviders);
 
-// GET /api/providers/me - Authenticated provider gets their own profile
-router.get('/me', protectRoute, isProvider, ProviderController.getMyProfile);
+// GET /api/providers/search - Search providers with filters
+router.get('/search', ProviderController.searchProviders);
 
-// GET /api/providers/:id - Get specific provider profile (accessible to any logged-in user)
-// Consider if this also needs protectRoute or if it should be public
-router.get('/:id', protectRoute, ProviderController.getProviderById);
+// GET /api/providers/nearby - Find providers near a location
+router.get('/nearby', ProviderController.findNearbyProviders);
 
-// PUT /api/providers/me - Provider updates their own profile
-router.put('/me', protectRoute, isProvider, ProviderController.updateMyProfile);
+// GET /api/providers/categories - Get all service categories
+router.get('/categories', ProviderController.getServiceCategories);
+
+// Protected routes (authentication required)
+// GET /api/providers/profile/me - Get the logged-in provider's profile
+router.get('/profile/me', protectRoute, isProvider, ProviderController.getMyProfile);
+
+// PATCH /api/providers/profile - Update the logged-in provider's profile
+router.patch('/profile', protectRoute, isProvider, ProviderController.updateMyProfile);
+
+// PATCH /api/providers/update-location - Update provider location
+router.patch('/update-location', protectRoute, isProvider, ProviderController.updateLocation);
+
+// PATCH /api/providers/update-services - Update provider services
+router.patch('/update-services', protectRoute, isProvider, ProviderController.updateServices);
+
+// POST /api/providers/profile-picture - Upload profile picture
+router.post('/profile-picture', protectRoute, isProvider, upload.single('profilePicture'), ProviderController.uploadProfilePicture);
+
+// GET /api/providers/:id - Get a specific provider by ID (must be last to avoid conflicts with specific routes)
+router.get('/:id', ProviderController.getProviderById);
 
 module.exports = router; 

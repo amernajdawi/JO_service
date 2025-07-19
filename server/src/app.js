@@ -17,13 +17,17 @@ const PORT = process.env.PORT || 3000;
 const authRoutes = require('./routes/auth.routes');
 const bookingRoutes = require('./routes/booking.routes'); // Import booking routes
 const providerRoutes = require('./routes/provider.routes'); // Import provider routes
+const userRoutes = require('./routes/user.routes'); // Import user routes
 const chatRoutes = require('./routes/chat.routes'); // Import chat routes
+const ratingRoutes = require('./routes/rating.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Middleware to parse JSON bodies
 
 // Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, '..', '..', 'public'))); // Corrected path
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
+app.use(express.static(path.join(__dirname, '..', 'public'))); // Serve other static files
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -34,7 +38,10 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes); // Mount booking routes
 app.use('/api/providers', providerRoutes); // Mount provider routes
+app.use('/api/users', userRoutes); // Mount user routes
 app.use('/api/chats', chatRoutes); // Mount chat routes
+app.use('/api/ratings', ratingRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // TODO: Add routes for ratings etc.
 

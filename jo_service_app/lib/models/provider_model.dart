@@ -1,16 +1,34 @@
 class ProviderLocation {
   final String? addressText;
+  final String? city; // Add city field for location filtering
   final List<double>? coordinates; // longitude, latitude
 
-  ProviderLocation({this.addressText, this.coordinates});
+  ProviderLocation({this.addressText, this.city, this.coordinates});
 
   factory ProviderLocation.fromJson(Map<String, dynamic> json) {
     List<double>? coords;
     if (json['point'] != null && json['point']['coordinates'] is List) {
       coords = (json['point']['coordinates'] as List).cast<double>();
     }
+
+    // Extract city from the JSON data
+    String? cityValue = json['city'] as String?;
+
+    // If city is not provided, try to extract it from addressText
+    if (cityValue == null && json['addressText'] != null) {
+      final addressText = json['addressText'] as String;
+      // Try to extract city from address
+      // This is a simple implementation - in a real app, you might need more sophisticated parsing
+      final parts = addressText.split(',');
+      if (parts.length >= 1) {
+        // Assume the city is the first part of the address
+        cityValue = parts[0].trim();
+      }
+    }
+
     return ProviderLocation(
       addressText: json['addressText'] as String?,
+      city: cityValue,
       coordinates: coords,
     );
   }
@@ -18,6 +36,7 @@ class ProviderLocation {
   Map<String, dynamic> toJson() {
     return {
       'addressText': addressText,
+      'city': city,
       'point': coordinates != null ? {'coordinates': coordinates} : null,
     };
   }
@@ -128,5 +147,10 @@ class Provider {
       'averageRating': averageRating,
       'totalRatings': totalRatings,
     };
+  }
+
+  @override
+  String toString() {
+    return 'Provider{id: $id, fullName: $fullName, email: $email, serviceType: $serviceType}';
   }
 }

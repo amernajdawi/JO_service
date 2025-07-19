@@ -131,6 +131,8 @@ class AuthService with ChangeNotifier {
     String? companyName, // Added for provider registration
     required String serviceType,
     String? hourlyRate, // Added hourlyRate parameter (as String)
+    String? city, // Added city parameter
+    String? addressText, // Added addressText parameter
     // Add other fields as necessary from your Provider model & backend controller
     // e.g., hourlyRate, locationLatitude, locationLongitude, addressText, etc.
   }) async {
@@ -146,6 +148,8 @@ class AuthService with ChangeNotifier {
         'companyName': companyName, // Added
         'serviceType': serviceType,
         'hourlyRate': hourlyRate, // Added hourlyRate to JSON body
+        'city': city, // Add city to JSON body
+        'addressText': addressText, // Add addressText to JSON body
         // Populate other fields here
       }),
     );

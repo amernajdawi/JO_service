@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../constants/theme.dart';
+import '../widgets/animated_button.dart';
+import '../widgets/animated_input.dart';
 import './provider_dashboard_screen.dart'; // Navigate to ProviderDashboardScreen
 import './provider_signup_screen.dart'; // To navigate to signup
 import 'package:provider/provider.dart';
@@ -71,46 +74,52 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text('Welcome Back, Provider!',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 25),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                    labelText: 'Email Address', border: OutlineInputBorder()),
+              const SizedBox(height: 20),
+              Text(
+                'Welcome Back, Provider!',
+                style: AppTheme.h1,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              AnimatedInput(
+                label: 'Email Address',
+                placeholder: 'Enter your email',
+                value: _emailController.text,
+                onChanged: (value) => _emailController.text = value,
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value!.isEmpty) return 'Please enter your email';
-                  if (!value.contains('@')) return 'Please enter a valid email';
-                  return null;
-                },
+                icon: const Icon(Icons.email, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                    labelText: 'Password', border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Password',
+                placeholder: 'Enter your password',
+                value: _passwordController.text,
+                onChanged: (value) => _passwordController.text = value,
                 obscureText: true,
-                validator: (value) =>
-                    value!.isEmpty ? 'Please enter your password' : null,
+                icon: const Icon(Icons.lock, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 30),
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 15),
-                  child: Text(_errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 15),
-                      textAlign: TextAlign.center),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: AppTheme.danger, fontSize: 15),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primary,
+                      ),
+                    )
+                  : AnimatedButton(
+                      title: 'Login',
                       onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          textStyle: const TextStyle(fontSize: 18)),
-                      child: const Text('Login'),
+                      fullWidth: true,
                     ),
               const SizedBox(height: 20),
               TextButton(
@@ -118,7 +127,10 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
                   Navigator.of(context)
                       .pushReplacementNamed(ProviderSignUpScreen.routeName);
                 },
-                child: const Text('Don\'t have an account? Sign Up'),
+                child: Text(
+                  'Don\'t have an account? Sign Up',
+                  style: TextStyle(color: AppTheme.primary),
+                ),
               )
             ],
           ),

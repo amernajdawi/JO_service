@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Added Provider
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import './user_login_screen.dart'; // To navigate to login
-import './user_home_screen.dart'; // To navigate to home after signup
+import '../constants/theme.dart';
+import '../widgets/animated_button.dart';
+import '../widgets/animated_input.dart';
+import './user_login_screen.dart';
+import './user_home_screen.dart';
 
 class UserSignUpScreen extends StatefulWidget {
-  static const routeName = '/user-signup'; // Added routeName
+  static const routeName = '/user-signup';
 
   const UserSignUpScreen({super.key});
 
@@ -15,7 +18,6 @@ class UserSignUpScreen extends StatefulWidget {
 
 class _UserSignUpScreenState extends State<UserSignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  // final _authService = AuthService(); // Will use Provider.of
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -41,25 +43,17 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
         return;
       }
 
-      final authService =
-          Provider.of<AuthService>(context, listen: false); // Use Provider
+      final authService = Provider.of<AuthService>(context, listen: false);
       try {
         await authService.registerUser(
           email: _emailController.text,
           password: _passwordController.text,
           fullName: _fullNameController.text,
           phoneNumber: _phoneNumberController.text,
-          // profilePictureUrl can be added later
         );
         setState(() {
           _isLoading = false;
         });
-        // No longer show SnackBar here, directly navigate
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //       content: Text('User registered successfully! Please log in.')),
-        // );
-        // Navigate directly to user home screen
         Navigator.of(context).pushReplacementNamed(UserHomeScreen.routeName);
       } catch (e) {
         setState(() {
@@ -91,78 +85,80 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text('Create your Account',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 25),
-              TextFormField(
-                controller: _fullNameController,
-                decoration: const InputDecoration(
-                    labelText: 'Full Name', border: OutlineInputBorder()),
-                validator: (value) =>
-                    value!.isEmpty ? 'Please enter your full name' : null,
+              Text(
+                'Create your Account',
+                style: AppTheme.h1,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              AnimatedInput(
+                label: 'Full Name',
+                placeholder: 'Enter your full name',
+                value: _fullNameController.text,
+                onChanged: (value) => _fullNameController.text = value,
+                icon: const Icon(Icons.person, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                    labelText: 'Email Address', border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Email Address',
+                placeholder: 'Enter your email',
+                value: _emailController.text,
+                onChanged: (value) => _emailController.text = value,
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value!.isEmpty) return 'Please enter your email';
-                  if (!value.contains('@')) return 'Please enter a valid email';
-                  return null;
-                },
+                icon: const Icon(Icons.email, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _phoneNumberController,
-                decoration: const InputDecoration(
-                    labelText: 'Phone Number (Optional)',
-                    border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Phone Number (Optional)',
+                placeholder: 'Enter your phone number',
+                value: _phoneNumberController.text,
+                onChanged: (value) => _phoneNumberController.text = value,
                 keyboardType: TextInputType.phone,
+                icon: const Icon(Icons.phone, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                    labelText: 'Password', border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Password',
+                placeholder: 'Enter your password',
+                value: _passwordController.text,
+                onChanged: (value) => _passwordController.text = value,
                 obscureText: true,
-                validator: (value) => value!.length < 6
-                    ? 'Password must be at least 6 characters'
-                    : null,
+                icon: const Icon(Icons.lock, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Confirm Password',
+                placeholder: 'Confirm your password',
+                value: _confirmPasswordController.text,
+                onChanged: (value) => _confirmPasswordController.text = value,
                 obscureText: true,
-                validator: (value) {
-                  if (value!.isEmpty) return 'Please confirm your password';
-                  if (value != _passwordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
+                icon: const Icon(Icons.lock_outline, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 30),
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 15),
-                  child: Text(_errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 15),
-                      textAlign: TextAlign.center),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: AppTheme.danger, fontSize: 15),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primary,
+                      ),
+                    )
+                  : AnimatedButton(
+                      title: 'Sign Up',
                       onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          textStyle: const TextStyle(fontSize: 18)),
-                      child: const Text('Sign Up'),
+                      fullWidth: true,
                     ),
               const SizedBox(height: 20),
               TextButton(
@@ -170,7 +166,10 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
                   Navigator.of(context)
                       .pushReplacementNamed(UserLoginScreen.routeName);
                 },
-                child: const Text('Already have an account? Login'),
+                child: Text(
+                  'Already have an account? Login',
+                  style: TextStyle(color: AppTheme.primary),
+                ),
               )
             ],
           ),

@@ -1,4 +1,4 @@
-const { WebSocketServer } = require('ws');
+const WebSocket = require('ws');
 const url = require('url');
 const { verifyToken } = require('../utils/jwt.utils'); // Assuming you have this
 const Message = require('../models/message.model'); // Import Message model
@@ -8,7 +8,7 @@ const Message = require('../models/message.model'); // Import Message model
 const clients = new Map();
 
 function initializeWebSocket(server) {
-    const wss = new WebSocketServer({ server });
+    const wss = new WebSocket.Server({ server });
 
     wss.on('connection', async (ws, req) => {
         console.log('WebSocket Client Attempting Connection...');

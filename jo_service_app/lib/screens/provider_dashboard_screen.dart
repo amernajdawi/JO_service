@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import './role_selection_screen.dart'; // For logout
 import './provider_list_screen.dart'; // For viewing all providers (can be their own profile later)
 import './edit_provider_profile_screen.dart'; // Import the new screen
+import './provider_bookings_screen.dart'; // Import ProviderBookingsScreen
 import 'package:provider/provider.dart';
 
 class ProviderDashboardScreen extends StatelessWidget {
@@ -61,6 +62,14 @@ class ProviderDashboardScreen extends StatelessWidget {
                 );
               },
               child: const Text('View All Providers'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context)
+                    .pushNamed(ProviderBookingsScreen.routeName);
+              },
+              child: const Text('Manage Bookings'),
             ),
             // TODO: Add other provider-specific actions/dashboard items
             // (e.g., view my services, manage bookings)

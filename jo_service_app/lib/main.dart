@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:jo_service_app/screens/provider_detail_screen.dart'; // Added import
 import 'package:jo_service_app/services/auth_service.dart'; // Added import
+import 'package:jo_service_app/services/theme_service.dart'; // Import ThemeService
 import 'package:provider/provider.dart'; // Added import
 // import 'screens/splash_screen.dart'; // New initial screen // Commented out as SplashScreen is deleted
 import './screens/auth_check_screen.dart'; // Import AuthCheckScreen
 import './screens/role_selection_screen.dart';
 import './screens/user_home_screen.dart';
+import './screens/user_profile_screen.dart'; // Import UserProfileScreen
 import './screens/provider_dashboard_screen.dart';
 import './screens/user_login_screen.dart'; // Import UserLoginScreen
 import './screens/provider_login_screen.dart'; // Import ProviderLoginScreen
 import './screens/user_signup_screen.dart'; // Import UserSignupScreen
 import './screens/provider_signup_screen.dart'; // Import ProviderSignupScreen
-// Import other screens that might be navigated to via onGenerateRoute if they have arguments
-// For example, UserLoginScreen, ProviderLoginScreen, etc. if they take args or you want explicit case for them.
+import './screens/user_bookings_screen.dart'; // Import UserBookingsScreen
+import './screens/provider_bookings_screen.dart'; // Import ProviderBookingsScreen
+import './screens/booking_detail_screen.dart'; // Import BookingDetailScreen
+import './screens/create_booking_screen.dart'; // Import CreateBookingScreen
 
 void main() {
   runApp(const MyApp());
@@ -24,90 +28,110 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    // Wrap with ChangeNotifierProvider for AuthService
-    return ChangeNotifierProvider(
-      create: (context) => AuthService(),
-      child: MaterialApp(
-        title: 'Service Marketplace',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          colorScheme:
-              ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(
-            secondary: Colors.amber, // Example secondary color
-            primaryContainer: Colors.blue[100],
-            onPrimaryContainer: Colors.blue[900],
-          ),
-        ),
-        // home: const SplashScreen(), // We will use initialRoute or onGenerateRoute for splash logic
-        initialRoute:
-            AuthCheckScreen.routeName, // Set AuthCheckScreen as initial route
-        onGenerateRoute: (settings) {
-          switch (settings.name) {
-            // case SplashScreen.routeName: // Commented out
-            // return MaterialPageRoute(builder: (_) => const SplashScreen()); // Commented out
-            // Add your other primary routes here if they don't take arguments
-            // For example, if you have a LoginScreen, HomeScreen, etc.
-            // case LoginScreen.routeName:
-            //   return MaterialPageRoute(builder: (_) => const LoginScreen());
-            case AuthCheckScreen.routeName:
-              return MaterialPageRoute(builder: (_) => const AuthCheckScreen());
-            case RoleSelectionScreen.routeName:
-              return MaterialPageRoute(
-                  builder: (_) => const RoleSelectionScreen());
-            case UserHomeScreen.routeName:
-              return MaterialPageRoute(builder: (_) => const UserHomeScreen());
-            case ProviderDashboardScreen.routeName:
-              return MaterialPageRoute(
-                  builder: (_) => const ProviderDashboardScreen());
-            case UserLoginScreen.routeName: // Added UserLoginScreen route
-              return MaterialPageRoute(builder: (_) => const UserLoginScreen());
-            case ProviderLoginScreen
-                  .routeName: // Added ProviderLoginScreen route
-              return MaterialPageRoute(
-                  builder: (_) => const ProviderLoginScreen());
-            case UserSignUpScreen.routeName: // Added UserSignUpScreen route
-              return MaterialPageRoute(
-                  builder: (_) => const UserSignUpScreen());
-            case ProviderSignUpScreen
-                  .routeName: // Added ProviderSignUpScreen route
-              return MaterialPageRoute(
-                  builder: (_) => const ProviderSignUpScreen());
-            case ProviderDetailScreen.routeName:
-              if (settings.arguments is String) {
-                final providerId = settings.arguments as String;
+    // Wrap with MultiProvider for multiple services
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthService()),
+        ChangeNotifierProvider(create: (context) => ThemeService()),
+      ],
+      child: Consumer<ThemeService>(builder: (context, themeService, child) {
+        return MaterialApp(
+          title: 'Service Marketplace',
+          theme: themeService.currentTheme,
+          initialRoute:
+              AuthCheckScreen.routeName, // Set AuthCheckScreen as initial route
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              // case SplashScreen.routeName: // Commented out
+              // return MaterialPageRoute(builder: (_) => const SplashScreen()); // Commented out
+              // Add your other primary routes here if they don't take arguments
+              // For example, if you have a LoginScreen, HomeScreen, etc.
+              // case LoginScreen.routeName:
+              //   return MaterialPageRoute(builder: (_) => const LoginScreen());
+              case AuthCheckScreen.routeName:
                 return MaterialPageRoute(
-                  builder: (_) => ProviderDetailScreen(providerId: providerId),
-                );
-              } else {
-                // Handle error: incorrect argument type
+                    builder: (_) => const AuthCheckScreen());
+              case RoleSelectionScreen.routeName:
+                return MaterialPageRoute(
+                    builder: (_) => const RoleSelectionScreen());
+              case UserHomeScreen.routeName:
+                return MaterialPageRoute(
+                    builder: (_) => const UserHomeScreen());
+              case UserProfileScreen.routeName: // Add UserProfileScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const UserProfileScreen());
+              case UserBookingsScreen.routeName: // Add UserBookingsScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const UserBookingsScreen());
+              case ProviderBookingsScreen
+                    .routeName: // Add ProviderBookingsScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const ProviderBookingsScreen());
+              case ProviderDashboardScreen.routeName:
+                return MaterialPageRoute(
+                    builder: (_) => const ProviderDashboardScreen());
+              case UserLoginScreen.routeName: // Added UserLoginScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const UserLoginScreen());
+              case ProviderLoginScreen
+                    .routeName: // Added ProviderLoginScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const ProviderLoginScreen());
+              case UserSignUpScreen.routeName: // Added UserSignUpScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const UserSignUpScreen());
+              case ProviderSignUpScreen
+                    .routeName: // Added ProviderSignUpScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const ProviderSignUpScreen());
+              case ProviderDetailScreen.routeName:
+                if (settings.arguments is String) {
+                  final providerId = settings.arguments as String;
+                  return MaterialPageRoute(
+                    builder: (_) =>
+                        ProviderDetailScreen(providerId: providerId),
+                  );
+                } else {
+                  // Handle error: incorrect argument type
+                  return MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Error')),
+                      body: const Center(
+                          child: Text('Invalid arguments for Provider Detail')),
+                    ),
+                  );
+                }
+              case BookingDetailScreen.routeName:
+                if (settings.arguments is String) {
+                  final bookingId = settings.arguments as String;
+                  return MaterialPageRoute(
+                    builder: (_) => BookingDetailScreen(bookingId: bookingId),
+                  );
+                } else {
+                  // Handle error: incorrect argument type
+                  return MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Error')),
+                      body: const Center(
+                          child: Text('Invalid arguments for Booking Detail')),
+                    ),
+                  );
+                }
+              // Default or unknown route
+              default:
+                // You can navigate to a 404 page or a default screen
                 return MaterialPageRoute(
                   builder: (_) => Scaffold(
-                    appBar: AppBar(title: const Text('Error')),
+                    appBar: AppBar(title: const Text('Page Not Found')),
                     body: const Center(
-                        child: Text('Invalid arguments for Provider Detail')),
+                        child: Text('Sorry, this page doesn\'t exist.')),
                   ),
                 );
-              }
-            // Add cases for other screens if they need to be handled by onGenerateRoute,
-            // especially if they take arguments (like UserLoginScreen, ProviderLoginScreen, etc.)
-            // Example:
-            // case UserLoginScreen.routeName: // Assuming UserLoginScreen has a routeName
-            //   return MaterialPageRoute(builder: (_) => const UserLoginScreen());
-            // Default or unknown route
-            default:
-              // You can navigate to a 404 page or a default screen
-              return MaterialPageRoute(
-                builder: (_) => Scaffold(
-                  appBar: AppBar(title: const Text('Page Not Found')),
-                  body: const Center(
-                      child: Text('Sorry, this page doesn\'t exist.')),
-                ),
-              );
-          }
-        },
-        debugShowCheckedModeBanner: false,
-      ),
+            }
+          },
+          debugShowCheckedModeBanner: false,
+        );
+      }),
     );
   }
 }

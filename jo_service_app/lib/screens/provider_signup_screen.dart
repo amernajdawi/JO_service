@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../constants/theme.dart';
+import '../widgets/animated_button.dart';
+import '../widgets/animated_input.dart';
 import './provider_login_screen.dart';
 import './provider_dashboard_screen.dart';
 
@@ -15,7 +18,6 @@ class ProviderSignUpScreen extends StatefulWidget {
 
 class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthService();
 
   // Text editing controllers
   final _emailController = TextEditingController();
@@ -25,7 +27,26 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
   final _companyNameController = TextEditingController();
   final _serviceTypeController = TextEditingController();
   final _hourlyRateController = TextEditingController();
-  // Add controllers for other fields: addressText, description, etc.
+  final _addressController = TextEditingController();
+
+  // Selected city
+  String _selectedCity = 'Amman';
+
+  // List of Jordanian cities
+  final List<String> _jordanCities = [
+    'Amman',
+    'Irbid',
+    'Zarqa',
+    'Mafraq',
+    'Ajloun',
+    'Jerash',
+    'Madaba',
+    'Balqa',
+    'Karak',
+    'Tafileh',
+    'Maan',
+    'Aqaba',
+  ];
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -47,6 +68,11 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
 
       final authService = Provider.of<AuthService>(context, listen: false);
       try {
+        // Create address text with city and detailed address
+        final String fullAddress = _addressController.text.isNotEmpty
+            ? '$_selectedCity, ${_addressController.text}'
+            : _selectedCity;
+
         // IMPORTANT: Pass all required fields to registerProvider
         await authService.registerProvider(
           email: _emailController.text,
@@ -55,7 +81,8 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
           companyName: _companyNameController.text,
           serviceType: _serviceTypeController.text,
           hourlyRate: _hourlyRateController.text,
-          // Pass other values from their controllers here
+          city: _selectedCity,
+          addressText: fullAddress,
         );
         setState(() {
           _isLoading = false;
@@ -81,6 +108,7 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
     _companyNameController.dispose();
     _serviceTypeController.dispose();
     _hourlyRateController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -95,109 +123,151 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text('Create your Provider Account',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 25),
-              TextFormField(
-                controller: _fullNameController,
-                decoration: const InputDecoration(
-                    labelText: 'Full Name', border: OutlineInputBorder()),
-                validator: (value) =>
-                    value!.isEmpty ? 'Please enter your full name' : null,
+              Text(
+                'Create your Provider Account',
+                style: AppTheme.h1,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              AnimatedInput(
+                label: 'Full Name',
+                placeholder: 'Enter your full name',
+                value: _fullNameController.text,
+                onChanged: (value) => _fullNameController.text = value,
+                icon: const Icon(Icons.person, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _companyNameController,
-                decoration: const InputDecoration(
-                    labelText: 'Company Name (Optional)',
-                    border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Company Name (Optional)',
+                placeholder: 'Enter your company name',
+                value: _companyNameController.text,
+                onChanged: (value) => _companyNameController.text = value,
+                icon: const Icon(Icons.business, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                    labelText: 'Email Address', border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Email Address',
+                placeholder: 'Enter your email',
+                value: _emailController.text,
+                onChanged: (value) => _emailController.text = value,
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value!.isEmpty) return 'Please enter your email';
-                  if (!value.contains('@')) return 'Please enter a valid email';
-                  return null;
-                },
+                icon: const Icon(Icons.email, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                    labelText: 'Password', border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Password',
+                placeholder: 'Enter your password',
+                value: _passwordController.text,
+                onChanged: (value) => _passwordController.text = value,
                 obscureText: true,
-                validator: (value) => value!.length < 6
-                    ? 'Password must be at least 6 characters'
-                    : null,
+                icon: const Icon(Icons.lock, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: OutlineInputBorder()),
+              AnimatedInput(
+                label: 'Confirm Password',
+                placeholder: 'Confirm your password',
+                value: _confirmPasswordController.text,
+                onChanged: (value) => _confirmPasswordController.text = value,
                 obscureText: true,
-                validator: (value) {
-                  if (value!.isEmpty) return 'Please confirm your password';
-                  if (value != _passwordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
+                icon: const Icon(Icons.lock_outline, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _serviceTypeController,
-                decoration: const InputDecoration(
-                    labelText: 'Service Type (e.g., Plumber, Electrician)',
-                    border: OutlineInputBorder()),
-                validator: (value) =>
-                    value!.isEmpty ? 'Please enter your service type' : null,
+              AnimatedInput(
+                label: 'Service Type',
+                placeholder: 'e.g., Plumber, Electrician',
+                value: _serviceTypeController.text,
+                onChanged: (value) => _serviceTypeController.text = value,
+                icon: const Icon(Icons.handyman, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                controller: _hourlyRateController,
-                decoration: const InputDecoration(
-                  labelText: 'Hourly Rate (\$)',
-                ),
+              AnimatedInput(
+                label: 'Hourly Rate (\$)',
+                placeholder: 'Enter your hourly rate',
+                value: _hourlyRateController.text,
+                onChanged: (value) => _hourlyRateController.text = value,
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your hourly rate';
-                  }
-                  final rate = double.tryParse(value);
-                  if (rate == null) {
-                    return 'Please enter a valid number';
-                  }
-                  if (rate <= 0) {
-                    return 'Rate must be positive';
-                  }
-                  return null;
-                },
+                icon: const Icon(Icons.attach_money, color: AppTheme.grey),
+                iconPosition: 'left',
               ),
-              // TODO: Add TextFormField widgets for other provider fields
-              // (addressText, description, availabilityDetails, etc.)
+              const SizedBox(height: 15),
+              // City selection dropdown
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                  border: Border.all(color: AppTheme.greyLight),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.location_city, color: AppTheme.grey),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCity,
+                          icon: const Icon(Icons.arrow_drop_down),
+                          elevation: 16,
+                          style: AppTheme.body3,
+                          isExpanded: true,
+                          hint: Text('Select City',
+                              style: TextStyle(color: AppTheme.grey)),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedCity = newValue;
+                              });
+                            }
+                          },
+                          items: _jordanCities
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 15),
+              AnimatedInput(
+                label: 'Detailed Address',
+                placeholder: 'Street, building, etc.',
+                value: _addressController.text,
+                onChanged: (value) => _addressController.text = value,
+                icon: const Icon(Icons.location_on, color: AppTheme.grey),
+                iconPosition: 'left',
+                maxLines: 2,
+              ),
               const SizedBox(height: 30),
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 15),
-                  child: Text(_errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 15),
-                      textAlign: TextAlign.center),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: AppTheme.danger, fontSize: 15),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primary,
+                      ),
+                    )
+                  : AnimatedButton(
+                      title: 'Sign Up as Provider',
                       onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          textStyle: const TextStyle(fontSize: 18)),
-                      child: const Text('Sign Up as Provider'),
+                      fullWidth: true,
                     ),
               const SizedBox(height: 20),
               TextButton(
@@ -205,7 +275,10 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                   Navigator.of(context)
                       .pushReplacementNamed(ProviderLoginScreen.routeName);
                 },
-                child: const Text('Already have an account? Login'),
+                child: Text(
+                  'Already have an account? Login',
+                  style: TextStyle(color: AppTheme.primary),
+                ),
               )
             ],
           ),

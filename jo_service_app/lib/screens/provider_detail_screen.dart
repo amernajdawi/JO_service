@@ -3,8 +3,12 @@ import '../services/api_service.dart';
 import '../models/provider_model.dart';
 import 'package:provider/provider.dart' as ctx; // Alias for provider package
 import '../services/auth_service.dart'; // To get token for API calls
-// import './booking_screen.dart'; // For booking navigation
+import './create_booking_screen.dart'; // For booking navigation
+import './favorites_screen.dart'; // For favorites screen
 // import './chat_screen.dart'; // For chat navigation
+
+// Global set to track favorites across the app
+final Set<String> favoriteProviders = {};
 
 class ProviderDetailScreen extends StatefulWidget {
   static const routeName = '/provider-detail';
@@ -21,6 +25,9 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   final ApiService _apiService = ApiService();
   Future<Provider?>? _providerFuture; // Nullable as provider might not be found
 
+  // Check if the current provider is in favorites
+  bool get isFavorite => favoriteProviders.contains(widget.providerId);
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +36,38 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
         _fetchProviderDetails();
       }
     });
+  }
+
+  // Toggle favorite status of the provider
+  void _toggleFavorite() {
+    setState(() {
+      if (isFavorite) {
+        favoriteProviders.remove(widget.providerId);
+      } else {
+        favoriteProviders.add(widget.providerId);
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text(isFavorite ? 'Added to favorites' : 'Removed from favorites'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'View Favorites',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => FavoritesScreen(
+                  favoriteProviderIds: favoriteProviders,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _fetchProviderDetails() async {
@@ -57,6 +96,16 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Provider Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite ? Colors.red : null,
+            ),
+            onPressed: _toggleFavorite,
+            tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+          ),
+        ],
       ),
       body: FutureBuilder<Provider?>(
         future: _providerFuture,
@@ -92,27 +141,60 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Center(
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    backgroundImage: provider.profilePictureUrl != null &&
-                            provider.profilePictureUrl!.isNotEmpty
-                        ? NetworkImage(provider.profilePictureUrl!)
-                        : null,
-                    child: (provider.profilePictureUrl == null ||
-                            provider.profilePictureUrl!.isEmpty)
-                        ? Text(
-                            provider.fullName?.isNotEmpty == true
-                                ? provider.fullName![0].toUpperCase()
-                                : 'P',
-                            style: TextStyle(
-                                fontSize: 40,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer,
-                                fontWeight: FontWeight.bold))
-                        : null,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primaryContainer,
+                        backgroundImage: provider.profilePictureUrl != null &&
+                                provider.profilePictureUrl!.isNotEmpty
+                            ? NetworkImage(provider.profilePictureUrl!)
+                            : null,
+                        child: (provider.profilePictureUrl == null ||
+                                provider.profilePictureUrl!.isEmpty)
+                            ? Text(
+                                provider.fullName?.isNotEmpty == true
+                                    ? provider.fullName![0].toUpperCase()
+                                    : 'P',
+                                style: TextStyle(
+                                    fontSize: 40,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.bold))
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                spreadRadius: 1,
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: InkWell(
+                            onTap: _toggleFavorite,
+                            child: Icon(
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: isFavorite ? Colors.red : Colors.grey,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16.0),
@@ -175,25 +257,49 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                 const SizedBox(height: 24.0),
 
                 Center(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    label: const Text('Book Service'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 15),
-                        textStyle: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                    onPressed: () {
-                      // TODO: Navigate to BookingScreen
-                      // Navigator.of(context).pushNamed(BookingScreen.routeName, arguments: provider.id);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Booking for ${provider.fullName}')));
-                    },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.calendar_today_outlined),
+                        label: const Text('Book Service'),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onPrimary,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 15),
+                            textStyle: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          // Navigate to CreateBookingScreen
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => CreateBookingScreen(
+                                serviceProvider: provider,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      OutlinedButton.icon(
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorite ? Colors.red : null,
+                        ),
+                        label:
+                            Text(isFavorite ? 'Favorited' : 'Add to Favorites'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 15),
+                        ),
+                        onPressed: _toggleFavorite,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 10.0),
@@ -211,7 +317,26 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                           content: Text('Chatting with ${provider.fullName}')));
                     },
                   ),
-                )
+                ),
+                if (favoriteProviders.isNotEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.favorite),
+                        label: const Text('View All Favorites'),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => FavoritesScreen(
+                                favoriteProviderIds: favoriteProviders,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 // TODO: Display Reviews Section
               ],
             ),

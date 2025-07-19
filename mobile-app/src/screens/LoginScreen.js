@@ -1,22 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  Button,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  StatusBar,
 } from 'react-native';
+import * as Animatable from 'react-native-animatable';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useAuth } from '../context/AuthContext';
+import { COLORS, FONTS, SIZES, SHADOWS } from '../constants/theme';
+import AnimatedButton from '../components/AnimatedButton';
+import AnimatedInput from '../components/AnimatedInput';
+import LottieLoader from '../components/LottieLoader';
 
-// Simple Segmented Control simulation
+// Simple Segmented Control simulation with animation
 const RoleSelector = ({ selectedRole, onSelectRole }) => {
   return (
-    <View style={styles.roleSelectorContainer}>
+    <Animatable.View 
+      style={styles.roleSelectorContainer}
+      animation="fadeIn"
+      duration={800}
+      delay={300}
+    >
       <TouchableOpacity 
         style={[styles.roleButton, selectedRole === 'user' && styles.roleButtonSelected]}
         onPress={() => onSelectRole('user')}
@@ -29,7 +37,7 @@ const RoleSelector = ({ selectedRole, onSelectRole }) => {
       >
         <Text style={[styles.roleButtonText, selectedRole === 'provider' && styles.roleButtonTextSelected]}>Provider</Text>
       </TouchableOpacity>
-    </View>
+    </Animatable.View>
   );
 };
 
@@ -65,59 +73,86 @@ const LoginScreen = ({ navigation }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.keyboardAvoidingContainer}
     >
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       <View style={styles.container}>
-        <Text style={styles.title}>Welcome Back!</Text>
-        <Text style={styles.subtitle}>Log in as a {selectedRole}</Text>
+        <Animatable.View animation="fadeIn" duration={1000} style={styles.logoContainer}>
+          <Animatable.Text
+            animation="pulse"
+            iterationCount="infinite"
+            duration={2000}
+            style={styles.logoText}
+          >
+            OnDemand
+          </Animatable.Text>
+        </Animatable.View>
+
+        <Animatable.View animation="fadeInUp" duration={800} delay={200}>
+          <Text style={[FONTS.h1, styles.title]}>Welcome Back!</Text>
+          <Text style={[FONTS.body4, styles.subtitle]}>Log in as a {selectedRole}</Text>
+        </Animatable.View>
         
         <RoleSelector selectedRole={selectedRole} onSelectRole={setSelectedRole} />
 
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+        {errorMessage ? (
+          <Animatable.Text 
+            animation="shake" 
+            style={styles.errorText}
+          >
+            {errorMessage}
+          </Animatable.Text>
+        ) : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <Animatable.View animation="fadeInUp" duration={800} delay={400} style={styles.formContainer}>
+          <AnimatedInput
+            label="Email Address"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.inputMargin}
+          />
+          
+          <AnimatedInput
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={styles.inputMargin}
+          />
+        </Animatable.View>
 
         {isLoading ? (
-          <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+          <LottieLoader 
+            type="loading" 
+            size={100} 
+            message="Logging in..." 
+          />
         ) : (
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Log In as {selectedRole === 'user' ? 'User' : 'Provider'}</Text>
-          </TouchableOpacity>
+          <Animatable.View animation="fadeInUp" duration={800} delay={600}>
+            <AnimatedButton
+              title={`Log In as ${selectedRole === 'user' ? 'User' : 'Provider'}`}
+              onPress={handleLogin}
+              size="large"
+              fullWidth
+              style={styles.loginButton}
+            />
+          </Animatable.View>
         )}
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have a user account? </Text>
+        <Animatable.View animation="fadeInUp" duration={800} delay={700} style={styles.footer}>
+          <Text style={[FONTS.body4, styles.footerText]}>Don't have a user account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Signup')}> 
             <Text style={styles.signupText}>Sign Up</Text>
           </TouchableOpacity>
-        </View>
+        </Animatable.View>
 
-        {/* Add separate link/button for provider signup */}
-        <View style={styles.footer}>
-            <Text style={styles.footerText}>Want to offer services? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('ProviderSignup')}> 
-                <Text style={styles.signupText}>Register as Provider</Text>
-            </TouchableOpacity>
-        </View>
-        
-        {/* Temporary button to bypass login, remove in production */}
-        {/* <Button 
-          title="Go to Home (TEMP)" 
-          onPress={() => navigation.replace('Main', { screen: 'Home'})} 
-        /> */}
+        <Animatable.View animation="fadeInUp" duration={800} delay={800} style={styles.footer}>
+          <Text style={[FONTS.body4, styles.footerText]}>Want to offer services? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('ProviderSignup')}> 
+            <Text style={styles.signupText}>Register as Provider</Text>
+          </TouchableOpacity>
+        </Animatable.View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -126,94 +161,86 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   keyboardAvoidingContainer: {
     flex: 1,
+    backgroundColor: COLORS.white,
   },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f7f7f7',
+    padding: SIZES.padding,
+    backgroundColor: COLORS.white,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: SIZES.padding * 2,
+  },
+  logoText: {
+    ...FONTS.largeTitle,
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    fontSize: 40,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+    color: COLORS.dark,
+    marginBottom: SIZES.base,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20, // Reduced margin
+    color: COLORS.grey,
+    marginBottom: SIZES.padding,
+    textAlign: 'center',
   },
   roleSelectorContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: SIZES.padding,
     borderWidth: 1,
-    borderColor: '#007AFF',
-    borderRadius: 8,
-    overflow: 'hidden', // Ensure borders look connected
+    borderColor: COLORS.primary,
+    borderRadius: SIZES.radius,
+    overflow: 'hidden',
+    ...SHADOWS.light,
   },
   roleButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
   },
   roleButtonSelected: {
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.primary,
   },
   roleButtonText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: COLORS.primary,
   },
   roleButtonTextSelected: {
-    color: '#fff',
+    color: COLORS.white,
     fontWeight: 'bold',
   },
-  input: {
+  formContainer: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    fontSize: 16,
+    marginBottom: SIZES.padding,
+  },
+  inputMargin: {
+    marginBottom: SIZES.padding,
   },
   loginButton: {
-    width: '100%',
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginTop: SIZES.base,
   },
   errorText: {
-    color: 'red',
-    marginBottom: 15,
+    color: COLORS.danger,
+    marginBottom: SIZES.padding,
     textAlign: 'center',
-  },
-  loader: {
-    marginVertical: 20,
   },
   footer: {
     flexDirection: 'row',
-    marginTop: 15, // Adjusted margin
+    marginTop: SIZES.padding,
   },
   footerText: {
-    fontSize: 14,
-    color: '#666',
+    color: COLORS.grey,
   },
   signupText: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: 'bold',
+    ...FONTS.h4,
+    color: COLORS.primary,
   },
 });
 

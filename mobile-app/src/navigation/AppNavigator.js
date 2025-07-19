@@ -13,8 +13,10 @@ import SignupScreen from '../screens/SignupScreen'; // Import SignupScreen
 import ProviderSignupScreen from '../screens/ProviderSignupScreen'; // Import ProviderSignupScreen
 import HomeScreen from '../screens/HomeScreen'; // User Home/Dashboard
 import UserBookingsScreen from '../screens/UserBookingsScreen'; // User Bookings List
+import UserProfileScreen from '../screens/UserProfileScreen'; // User Profile Screen
 import ProviderDashboard from '../screens/ProviderDashboard'; // Provider Home
 import ProviderBookingsScreen from '../screens/ProviderBookingsScreen'; // Import Provider Bookings
+import ProviderProfileScreen from '../screens/ProviderProfileScreen'; // Import Provider Profile Screen
 // Import other screens like SignupScreen, ProviderDetailsScreen etc. as they are created
 
 const AuthStack = createStackNavigator();
@@ -58,8 +60,11 @@ const UserMainNavigator = () => { // Now uses Tabs
         component={UserBookingsScreen} 
         options={{ title: 'My Bookings' }} 
       />
-      {/* Add other USER tabs here (e.g., Profile, Search Providers) */}
-      {/* <UserTab.Screen name="Profile" component={UserProfileScreen} /> */}
+      <UserTab.Screen 
+        name="UserProfile" 
+        component={UserProfileScreen} 
+        options={{ title: 'My Profile' }} 
+      />
     </UserTab.Navigator>
   );
 };
@@ -78,7 +83,12 @@ const ProviderMainNavigator = () => { // Now uses Tabs
         component={ProviderBookingsScreen} 
         options={{ title: 'Bookings' }} 
       />
-      {/* Add other PROVIDER tabs here (e.g., Profile, Availability) */}
+      <ProviderTab.Screen 
+        name="ProviderProfile" 
+        component={ProviderProfileScreen} 
+        options={{ title: 'My Profile' }} 
+      />
+      {/* Add other PROVIDER tabs here (e.g., Availability) */}
     </ProviderTab.Navigator>
   );
 };

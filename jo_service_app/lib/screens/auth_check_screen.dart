@@ -15,41 +15,48 @@ class AuthCheckScreen extends StatefulWidget {
 }
 
 class _AuthCheckScreenState extends State<AuthCheckScreen> {
+  // Add a variable to store the AuthService instance
+  late final AuthService _authService;
+
   @override
   void initState() {
     super.initState();
+    // Initialize the _authService variable
+    _authService = Provider.of<AuthService>(context, listen: false);
+
     // Use WidgetsBinding.instance.addPostFrameCallback to ensure that
     // the navigation happens after the first frame is built.
     // This is important because AuthService might notify listeners
     // during its initialization, and we need the context to be ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAuthStatusAndNavigate();
+      // Navigate directly to the RoleSelectionScreen for now
+      Navigator.of(context).pushReplacementNamed(RoleSelectionScreen.routeName);
+
+      // Uncomment this when you want to implement the full auth flow
+      // _checkAuthStatusAndNavigate();
     });
   }
 
   Future<void> _checkAuthStatusAndNavigate() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-
-    // Wait for AuthService to finish loading initial auth data
-    if (authService.isLoading) {
-      // If still loading, listen to changes and re-check
-      // This scenario might happen if AuthCheckScreen is built before AuthService finishes its async _loadAuthData
-      // It's generally better if AuthService completes loading before the app UI that depends on it is shown,
-      // but this provides a fallback.
-      authService.addListener(_onAuthServiceChanged);
+    // Use the class variable instead of Provider.of
+    // If still loading, listen to changes and re-check
+    // This scenario might happen if AuthCheckScreen is built before AuthService finishes its async _loadAuthData
+    // It's generally better if AuthService completes loading before the app UI that depends on it is shown,
+    // but this provides a fallback.
+    if (_authService.isLoading) {
+      _authService.addListener(_onAuthServiceChanged);
       return; // Exit, _onAuthServiceChanged will handle navigation
     }
 
     // Once loading is complete, perform the navigation
-    _performNavigation(authService);
+    _performNavigation(_authService);
   }
 
   void _onAuthServiceChanged() {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    if (!authService.isLoading) {
+    if (!_authService.isLoading) {
       // Remove listener once loading is done to avoid multiple calls
-      authService.removeListener(_onAuthServiceChanged);
-      _performNavigation(authService);
+      _authService.removeListener(_onAuthServiceChanged);
+      _performNavigation(_authService);
     }
   }
 
@@ -75,8 +82,8 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
   @override
   void dispose() {
     // Clean up listener if the widget is disposed before auth check completes
-    Provider.of<AuthService>(context, listen: false)
-        .removeListener(_onAuthServiceChanged);
+    // Use the stored instance, which is safe to access in dispose
+    _authService.removeListener(_onAuthServiceChanged);
     super.dispose();
   }
 

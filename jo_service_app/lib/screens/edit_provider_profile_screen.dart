@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart'
     as ctxProvider; // Aliased provider import
+import 'package:image_picker/image_picker.dart';
 import '../models/provider_model.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart'; // For AuthService type and its methods
@@ -17,6 +20,9 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
   final ApiService _apiService = ApiService();
   Future<Provider?>? _providerProfileFuture;
   Provider? _currentProvider; // Store the current provider data
+  final ImagePicker _picker = ImagePicker();
+  File? _imageFile;
+  bool _isUploading = false;
 
   bool _isEditing = false; // To toggle edit mode
   final _formKey = GlobalKey<FormState>(); // For form validation
@@ -181,6 +187,92 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
     }
   }
 
+  // Add method to pick image from gallery
+  Future<void> _pickImage() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Image upload is not supported in web mode. Please use the mobile app.')),
+      );
+      return;
+    }
+
+    try {
+      final XFile? pickedFile =
+          await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = File(pickedFile.path);
+        });
+        await _uploadProfilePicture();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
+  }
+
+  // Add method to upload profile picture
+  Future<void> _uploadProfilePicture() async {
+    if (_imageFile == null) return;
+
+    try {
+      setState(() {
+        _isUploading = true;
+      });
+
+      final authService =
+          ctxProvider.Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+
+      if (token == null || token.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Authentication error. Cannot upload image.')),
+          );
+        }
+        setState(() {
+          _isUploading = false;
+        });
+        return;
+      }
+
+      final updatedProvider =
+          await _apiService.uploadProfilePicture(token, _imageFile!);
+      if (updatedProvider != null) {
+        setState(() {
+          _currentProvider = updatedProvider;
+          _profilePictureUrlController.text =
+              updatedProvider.profilePictureUrl ?? '';
+          _isUploading = false;
+          _imageFile = null;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Profile picture uploaded successfully!')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error uploading profile picture: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload profile picture: $e')),
+        );
+      }
+      setState(() {
+        _isUploading = false;
+      });
+    }
+  }
+
   Widget _buildProfileDetail(String title, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -299,24 +391,49 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Center(
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _isEditing
-                          ? (_profilePictureUrlController.text.isNotEmpty
-                              ? NetworkImage(_profilePictureUrlController.text)
-                              : null)
-                          : (provider.profilePictureUrl != null &&
-                                  provider.profilePictureUrl!.isNotEmpty
-                              ? NetworkImage(provider.profilePictureUrl!)
-                              : null),
-                      child: _isEditing
-                          ? (_profilePictureUrlController.text.isEmpty
-                              ? const Icon(Icons.person, size: 50)
-                              : null)
-                          : (provider.profilePictureUrl == null ||
-                                  provider.profilePictureUrl!.isEmpty
-                              ? const Icon(Icons.person, size: 50)
-                              : null),
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundImage: _imageFile != null
+                              ? FileImage(_imageFile!)
+                              : (_isEditing
+                                  ? (_profilePictureUrlController
+                                          .text.isNotEmpty
+                                      ? NetworkImage(
+                                              _profilePictureUrlController.text)
+                                          as ImageProvider<Object>
+                                      : null)
+                                  : (provider.profilePictureUrl != null &&
+                                          provider.profilePictureUrl!.isNotEmpty
+                                      ? NetworkImage(
+                                              provider.profilePictureUrl!)
+                                          as ImageProvider<Object>
+                                      : null)),
+                          child: _isUploading
+                              ? const CircularProgressIndicator()
+                              : (_imageFile == null &&
+                                      (_isEditing
+                                          ? _profilePictureUrlController
+                                              .text.isEmpty
+                                          : (provider.profilePictureUrl ==
+                                                  null ||
+                                              provider
+                                                  .profilePictureUrl!.isEmpty))
+                                  ? const Icon(Icons.person, size: 50)
+                                  : null),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: IconButton(
+                            icon: const Icon(Icons.camera_alt),
+                            onPressed: _pickImage,
+                            color: Theme.of(context).primaryColor,
+                            tooltip: 'Pick Image',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 20),

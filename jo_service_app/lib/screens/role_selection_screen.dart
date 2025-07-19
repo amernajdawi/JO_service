@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../constants/theme.dart';
+import '../widgets/animated_button.dart';
 import './user_login_screen.dart';
 import './provider_login_screen.dart';
 
@@ -21,35 +23,25 @@ class RoleSelectionScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text(
+              Text(
                 'How would you like to continue?',
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87),
+                style: AppTheme.h2.copyWith(color: AppTheme.dark),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  textStyle: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w500),
-                ),
-                child: const Text('I am a User'),
+              AnimatedButton(
+                title: 'I am a User',
+                fullWidth: true,
                 onPressed: () {
                   Navigator.of(context)
                       .pushReplacementNamed(UserLoginScreen.routeName);
                 },
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  textStyle: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w500),
-                ),
-                child: const Text('I am a Service Provider'),
+              AnimatedButton(
+                title: 'I am a Service Provider',
+                variant: 'outlined',
+                fullWidth: true,
                 onPressed: () {
                   Navigator.of(context)
                       .pushReplacementNamed(ProviderLoginScreen.routeName);

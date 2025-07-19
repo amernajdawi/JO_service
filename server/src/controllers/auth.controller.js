@@ -78,7 +78,7 @@ const AuthController = {
     async registerProvider(req, res) {
         const {
             email, password, fullName, serviceType, hourlyRate,
-            locationLatitude, locationLongitude, addressText, // Expecting coordinates and address
+            locationLatitude, locationLongitude, addressText, city, // Added city parameter
             availabilityDetails, serviceDescription, profilePictureUrl
         } = req.body;
 
@@ -99,29 +99,58 @@ const AuthController = {
             if (addressText) {
                 location.addressText = addressText;
             }
-
-            const newProvider = new Provider({
-                email,
-                password,
-                fullName,
-                serviceType,
-                hourlyRate,
-                location: Object.keys(location).length > 0 ? location : undefined, // Only add location if data exists
-                availabilityDetails,
-                serviceDescription,
-                profilePictureUrl
-                // isVerified, averageRating, totalRatings have defaults in the schema
-            });
-
-            const savedProvider = await newProvider.save();
-            const providerResponse = getProviderResponse(savedProvider);
-            const token = generateToken({ id: savedProvider._id, type: 'provider' });
-
-            res.status(201).json({ 
-                message: 'Provider registered successfully', 
-                provider: providerResponse, 
-                token 
-            });
+            if (city) {
+                location.city = city;
+                
+                // Add city to service areas array if it's not already there
+                const serviceAreas = [city];
+                
+                const newProvider = new Provider({
+                    email,
+                    password,
+                    fullName,
+                    serviceType,
+                    hourlyRate,
+                    location: Object.keys(location).length > 0 ? location : undefined,
+                    serviceAreas, // Add service areas
+                    availabilityDetails,
+                    serviceDescription,
+                    profilePictureUrl
+                });
+                
+                const savedProvider = await newProvider.save();
+                const providerResponse = getProviderResponse(savedProvider);
+                const token = generateToken({ id: savedProvider._id, type: 'provider' });
+                
+                res.status(201).json({ 
+                    message: 'Provider registered successfully', 
+                    provider: providerResponse, 
+                    token 
+                });
+            } else {
+                // If no city is provided, continue without service areas
+                const newProvider = new Provider({
+                    email,
+                    password,
+                    fullName,
+                    serviceType,
+                    hourlyRate,
+                    location: Object.keys(location).length > 0 ? location : undefined,
+                    availabilityDetails,
+                    serviceDescription,
+                    profilePictureUrl
+                });
+                
+                const savedProvider = await newProvider.save();
+                const providerResponse = getProviderResponse(savedProvider);
+                const token = generateToken({ id: savedProvider._id, type: 'provider' });
+                
+                res.status(201).json({ 
+                    message: 'Provider registered successfully', 
+                    provider: providerResponse, 
+                    token 
+                });
+            }
         } catch (error) {
             console.error('Provider registration error:', error);
             if (error.name === 'ValidationError') {
