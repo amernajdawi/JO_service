@@ -7,6 +7,10 @@ const path = require('path'); // Import path module
 const cors = require('cors'); // Import cors
 const { initializeWebSocket } = require('./services/websocket.service'); // Import WebSocket initializer
 
+// Swagger documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
+
 // Connect to Database
 connectDB();
 
@@ -21,6 +25,7 @@ const userRoutes = require('./routes/user.routes'); // Import user routes
 const chatRoutes = require('./routes/chat.routes'); // Import chat routes
 const ratingRoutes = require('./routes/rating.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const adminRoutes = require('./routes/admin.routes'); // Import admin routes
 
 app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Middleware to parse JSON bodies
@@ -28,6 +33,12 @@ app.use(express.json()); // Middleware to parse JSON bodies
 // Serve static files from the 'public' directory
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 app.use(express.static(path.join(__dirname, '..', 'public'))); // Serve other static files
+
+// Swagger documentation route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'JO Service API Documentation'
+}));
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -42,6 +53,7 @@ app.use('/api/users', userRoutes); // Mount user routes
 app.use('/api/chats', chatRoutes); // Mount chat routes
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes); // Mount admin routes
 
 // TODO: Add routes for ratings etc.
 
@@ -50,8 +62,10 @@ const server = http.createServer(app);
 initializeWebSocket(server); // Initialize WebSocket handling
 
 // --- Start the HTTP server ---
-server.listen(PORT, () => { 
+server.listen(PORT, '0.0.0.0', () => { 
   console.log(`Server (HTTP + WebSocket) is running on port ${PORT}`);
+  console.log(`📚 API Documentation available at: http://localhost:${PORT}/api-docs`);
+  console.log(`📱 Mobile app can connect at: http://10.46.6.119:${PORT}`);
 });
 
 module.exports = app; // Keep exporting app for potential testing 

@@ -35,10 +35,33 @@ const storage = multer.diskStorage({
 
 // File filter function
 const fileFilter = (req, file, cb) => {
-  // Accept images only
-  if (file.mimetype.startsWith('image/')) {
+  console.log('Upload attempt - Field:', file.fieldname, 'MIME:', file.mimetype, 'Original name:', file.originalname);
+  
+  // Accept images only - check both MIME type and file extension
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/jpg', 
+    'image/png',
+    'image/gif',
+    'image/bmp',
+    'image/webp',
+    'image/heic',
+    'image/heif',
+    'application/octet-stream' // iOS sometimes sends images as octet-stream
+  ];
+  
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.heic', '.heif'];
+  const fileExt = path.extname(file.originalname).toLowerCase();
+  
+  // Check if MIME type is allowed OR if file extension is allowed (for iOS compatibility)
+  const isMimeTypeAllowed = allowedMimeTypes.includes(file.mimetype.toLowerCase());
+  const isExtensionAllowed = allowedExtensions.includes(fileExt);
+  
+  if (isMimeTypeAllowed || isExtensionAllowed || file.mimetype.startsWith('image/')) {
+    console.log('File accepted:', file.originalname);
     cb(null, true);
   } else {
+    console.log('File rejected - MIME:', file.mimetype, 'Extension:', fileExt);
     cb(new Error('Only image files are allowed!'), false);
   }
 };

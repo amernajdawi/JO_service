@@ -26,6 +26,10 @@ const bookingSchema = new Schema({
         type: String,
         trim: true
     },
+    photos: {
+        type: [String], // Array of photo URLs
+        default: []
+    },
     status: {
         type: String,
         required: true,

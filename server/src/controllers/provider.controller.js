@@ -22,6 +22,9 @@ const ProviderController = {
                 // We can add .populate() here later if needed (e.g., recent reviews)
             };
 
+            // Only show verified providers to users
+            query.verificationStatus = 'verified';
+
             // Apply Filters
             if (serviceType) {
                 // Case-insensitive search for service type
@@ -89,8 +92,11 @@ const ProviderController = {
         }
 
         try {
-            // Exclude password explicitly if not done by schema
-            const provider = await Provider.findById(id).select('-password'); 
+            // Only show verified providers to users
+            const provider = await Provider.findOne({
+                _id: id,
+                verificationStatus: 'verified'
+            }).select('-password'); 
             
             if (!provider) {
                 return res.status(404).json({ message: 'Provider not found.' });
@@ -307,8 +313,9 @@ const ProviderController = {
             // Build the query object
             const queryObj = {};
             
-            // Only include active providers
+            // Only include active and verified providers
             queryObj.accountStatus = 'active';
+            queryObj.verificationStatus = 'verified';
             
             // Apply text search if query is provided
             if (query && query.trim()) {
@@ -336,10 +343,7 @@ const ProviderController = {
                 queryObj.serviceTags = { $in: tagArray };
             }
             
-            // Only show verified providers if requested
-            if (verified === 'true') {
-                queryObj.isVerified = true;
-            }
+            // Note: All providers shown to users are verified by default
             
             console.log('MongoDB query:', JSON.stringify(queryObj));
             
@@ -414,6 +418,7 @@ const ProviderController = {
             // Build the query object
             const queryObj = {
                 accountStatus: 'active',
+                verificationStatus: 'verified',
                 'location.coordinates': {
                     $nearSphere: {
                         $geometry: {

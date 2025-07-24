@@ -53,3 +53,13 @@ The project is divided into two main parts:
 ## License
 
 (License information to be added later) 
+
+
+
+how to run the backend 
+1- cd /Users/ameralnajdawi/Desktop/JO_service/server
+2_ npm run dev
+
+to run the frontend 
+1- cd /Users/ameralnajdawi/Desktop/JO_service/jo_service_app
+2- flutter run -d chrome

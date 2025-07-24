@@ -26,6 +26,8 @@
     "mongoose": "^8.0.0",
     "multer": "^2.0.1",
     "react-native-image-picker": "^8.2.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
     "ws": "^8.18.2"
   },
   "devDependencies": {

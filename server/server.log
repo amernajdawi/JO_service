@@ -1,0 +1,5 @@
+WebSocket server initialized
+Server (HTTP + WebSocket) is running on port 3000
+📚 API Documentation available at: http://localhost:3000/api-docs
+📱 Mobile app can connect at: http://10.46.6.119:3000
+MongoDB Connected successfully!

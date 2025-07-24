@@ -28,10 +28,21 @@ const messageSchema = new mongoose.Schema({
         required: true,
         enum: ['User', 'Provider']
     },
+    messageType: {
+        type: String,
+        enum: ['text', 'image', 'booking_images'],
+        default: 'text'
+    },
     text: {
         type: String,
-        required: true,
+        required: function() {
+            return this.messageType === 'text' || (this.messageType === 'image' && (!this.images || this.images.length === 0));
+        },
         trim: true
+    },
+    images: {
+        type: [String], // Array of image URLs
+        default: []
     },
     timestamp: {
         type: Date,
@@ -39,9 +50,12 @@ const messageSchema = new mongoose.Schema({
         index: true
     },
     // Optional: read status for features like 'seen' indicators
-    readByRecipient: {
+    isRead: {
         type: Boolean,
         default: false
+    },
+    readAt: {
+        type: Date
     }
 }, {
     timestamps: true // Adds createdAt and updatedAt automatically

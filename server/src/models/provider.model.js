@@ -150,6 +150,39 @@ const providerSchema = new Schema({
         type: Boolean,
         default: false
     },
+    // Admin verification fields
+    verificationStatus: {
+        type: String,
+        enum: ['pending', 'verified', 'rejected'],
+        default: 'pending'
+    },
+    verifiedAt: {
+        type: Date,
+        default: null
+    },
+    verifiedBy: {
+        type: String, // Admin ID or username
+        default: null
+    },
+    rejectionReason: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    // Status change tracking
+    lastStatusChange: {
+        type: Date,
+        default: Date.now
+    },
+    lastStatusChangedBy: {
+        type: String, // Admin ID or username who made the last change
+        default: null
+    },
+    completedBookings: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     accountStatus: {
         type: String,
         enum: ['active', 'suspended', 'deactivated'],

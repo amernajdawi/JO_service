@@ -8,23 +8,39 @@ const BookingController = {
     async createBooking(req, res) {
         const { providerId, serviceDateTime, serviceLocationDetails, userNotes } = req.body;
         const userId = req.auth.id; // Assuming protectRoute middleware adds auth object with user ID
+        const uploadedFiles = req.files || []; // Files uploaded via multer
         
         console.log("Creating booking with userId:", userId);
         console.log("providerId:", providerId);
         console.log("serviceDateTime:", serviceDateTime);
         console.log("serviceLocationDetails:", serviceLocationDetails);
         console.log("userNotes:", userNotes);
+        console.log("uploadedFiles:", uploadedFiles.length, "files");
 
         if (!providerId || !serviceDateTime) {
             return res.status(400).json({ message: 'Provider ID and service date/time are required.' });
         }
 
         try {
-            // Optional: Check if provider exists
-            const providerExists = await Provider.findById(providerId);
+            // Check if provider exists and is verified
+            const providerExists = await Provider.findOne({
+                _id: providerId,
+                verificationStatus: 'verified'
+            });
             if (!providerExists) {
-                console.log("Provider not found for ID:", providerId);
-                return res.status(404).json({ message: 'Provider not found.' });
+                console.log("Verified provider not found for ID:", providerId);
+                return res.status(404).json({ message: 'Provider not found or not available for booking.' });
+            }
+
+            // Process uploaded photos
+            const photoUrls = [];
+            if (uploadedFiles && uploadedFiles.length > 0) {
+                uploadedFiles.forEach(file => {
+                    // Create relative URL path for the uploaded file
+                    const photoUrl = `/uploads/${file.filename}`;
+                    photoUrls.push(photoUrl);
+                    console.log("Photo uploaded:", photoUrl);
+                });
             }
 
             const newBooking = new Booking({
@@ -33,6 +49,7 @@ const BookingController = {
                 serviceDateTime,
                 serviceLocationDetails,
                 userNotes,
+                photos: photoUrls, // Add photo URLs to booking
                 status: 'pending' // Initial status
             });
 

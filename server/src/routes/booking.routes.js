@@ -1,11 +1,12 @@
 const express = require('express');
 const BookingController = require('../controllers/booking.controller');
 const { protectRoute, isUser, isProvider } = require('../middlewares/auth.middleware');
+const upload = require('../middlewares/upload.middleware');
 
 const router = express.Router();
 
-// POST /api/bookings - User creates a booking request
-router.post('/', protectRoute, isUser, BookingController.createBooking);
+// POST /api/bookings - User creates a booking request (with optional photo uploads)
+router.post('/', protectRoute, isUser, upload.array('photos', 10), BookingController.createBooking);
 
 // GET /api/bookings/user - Get bookings for the logged-in user
 router.get('/user', protectRoute, isUser, BookingController.getBookingsForUser);
