@@ -5,6 +5,7 @@ import '../models/booking_model.dart';
 import '../services/auth_service.dart';
 import '../services/booking_service.dart';
 import '../services/rating_service.dart';
+import '../services/navigation_service.dart';
 
 class BookingDetailScreen extends StatefulWidget {
   final String bookingId;
@@ -178,7 +179,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       await _ratingService.rateProvider(
         token: token,
         bookingId: widget.bookingId,
-        providerId: _booking!.provider!.id,
+        providerId: _booking!.provider!.id ?? '',
         rating: _userRating,
         review: _userReview,
       );
@@ -416,6 +417,34 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
+  // Open navigation to user's location
+  Future<void> _openNavigation() async {
+    try {
+      if (_booking?.serviceLocationDetails != null && 
+          _booking!.serviceLocationDetails!.isNotEmpty) {
+        await NavigationService.openGoogleMapsNavigation(
+          latitude: 31.9539, // Default to Amman coordinates
+          longitude: 35.9106,
+          address: _booking!.serviceLocationDetails,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No location information available'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to open navigation: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final formattedDate = _booking != null
@@ -536,6 +565,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           leading: const Icon(Icons.location_on),
                           title: const Text('Location'),
                           subtitle: Text(_booking!.serviceLocationDetails!),
+                          trailing: _userType == 'provider' 
+                              ? IconButton(
+                                  icon: const Icon(Icons.directions),
+                                  onPressed: () => _openNavigation(),
+                                  tooltip: 'Open in Google Maps',
+                                )
+                              : null,
                         ),
 
                       // Notes if available

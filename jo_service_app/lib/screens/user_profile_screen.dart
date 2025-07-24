@@ -463,11 +463,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           backgroundImage: _imageFile != null
                               ? FileImage(_imageFile!) as ImageProvider<Object>
                               : (user.profilePictureUrl != null &&
-                                      user.profilePictureUrl!.isNotEmpty
+                                      user.profilePictureUrl!.isNotEmpty &&
+                                      user.profilePictureUrl!.startsWith('http')
                                   ? NetworkImage(user.profilePictureUrl!)
-                                      as ImageProvider<Object>
-                                  : const AssetImage('assets/default_user.png')
-                                      as ImageProvider<Object>),
+                                  : const AssetImage('assets/default_user.png')) as ImageProvider<Object>,
                           child: _isUploading
                               ? const CircularProgressIndicator()
                               : ((_imageFile == null &&

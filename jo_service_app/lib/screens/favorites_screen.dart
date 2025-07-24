@@ -7,10 +7,12 @@ import './provider_detail_screen.dart';
 class FavoritesScreen extends StatefulWidget {
   static const routeName = '/favorites';
   final Set<String> favoriteProviderIds;
+  final bool showAppBar; // Controls whether to show AppBar
 
   const FavoritesScreen({
     Key? key,
     required this.favoriteProviderIds,
+    this.showAppBar = true, // Default to true for standalone usage
   }) : super(key: key);
 
   @override
@@ -59,7 +61,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
       // Filter to only show favorites
       return allProviders
-          .where((provider) => widget.favoriteProviderIds.contains(provider.id))
+          .where((provider) => provider.id != null && widget.favoriteProviderIds.contains(provider.id))
           .toList();
     } catch (e) {
       print('Error fetching favorite providers: $e');
@@ -70,23 +72,43 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Favorites',
-          style: AppTheme.h3.copyWith(color: AppTheme.dark),
-        ),
-        backgroundColor: AppTheme.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppTheme.dark),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+      // Only show AppBar when explicitly requested (for standalone/modal usage)
+      appBar: widget.showAppBar 
+        ? AppBar(
+            title: Text(
+              'Favorites',
+              style: AppTheme.h3.copyWith(color: AppTheme.dark),
+            ),
+            backgroundColor: AppTheme.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: AppTheme.dark),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          )
+        : null,
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : FutureBuilder<List<Provider>>(
-              future: _favoriteProviders,
-              builder: (context, snapshot) {
+          : Column(
+              children: [
+                // Add title when no AppBar is shown (tab usage)
+                if (!widget.showAppBar) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                    child: Text(
+                      'My Favorites',
+                      style: AppTheme.h2.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.dark,
+                      ),
+                    ),
+                  ),
+                ],
+                Expanded(
+                  child: FutureBuilder<List<Provider>>(
+                    future: _favoriteProviders,
+                    builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
@@ -147,6 +169,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 );
               },
             ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -161,7 +186,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         onTap: () {
           Navigator.of(context).pushNamed(
             ProviderDetailScreen.routeName,
-            arguments: provider.id,
+            arguments: provider.id ?? '',
           );
         },
         borderRadius: BorderRadius.circular(AppTheme.radius),
@@ -196,7 +221,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           onPressed: () {
                             // Remove from favorites using global set
                             setState(() {
-                              favoriteProviders.remove(provider.id);
+                              if (provider.id != null) {
+                                favoriteProviders.remove(provider.id);
+                              }
                             });
 
                             // Reload the list

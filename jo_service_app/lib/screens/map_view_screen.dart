@@ -1,3 +1,5 @@
+// Temporarily disabled due to missing dependencies
+/*
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -10,7 +12,9 @@ import '../services/auth_service.dart';
 import '../services/provider_service.dart';
 import '../services/location_service.dart';
 import '../widgets/provider_info_card.dart';
+*/
 
+// Temporarily disabled due to missing dependencies
 class MapViewScreen extends StatefulWidget {
   static const routeName = '/map-view';
 
@@ -21,6 +25,8 @@ class MapViewScreen extends StatefulWidget {
 }
 
 class _MapViewScreenState extends State<MapViewScreen> {
+  // Temporarily disabled due to missing dependencies
+  /*
   final ProviderService _providerService = ProviderService();
   final LocationService _locationService = LocationService();
   final MapController _mapController = MapController();
@@ -32,13 +38,15 @@ class _MapViewScreenState extends State<MapViewScreen> {
   LatLng _currentLocation = LatLng(31.9539, 35.9106); // Default to Amman
   double _searchRadius = 10.0; // Default radius in km
   String? _selectedCategory;
+  */
 
   @override
   void initState() {
     super.initState();
-    _initializeLocationAndProviders();
+    // _initializeLocationAndProviders();
   }
 
+  /*
   Future<void> _initializeLocationAndProviders() async {
     setState(() {
       _isLoading = true;
@@ -77,7 +85,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
       });
     }
   }
+  */
 
+  /*
   Future<void> _fetchNearbyProviders() async {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
@@ -102,6 +112,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
       });
     }
   }
+  */
 
   Future<void> _requestLocationPermission() async {
     try {
@@ -150,19 +161,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nearby Service Providers'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _initializeLocationAndProviders,
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterDialog,
-          ),
-        ],
+        title: const Text('Map View'),
       ),
-      body: _buildBody(),
+      body: const Center(
+        child: Text('Map functionality temporarily disabled'),
+      ),
     );
   }
 

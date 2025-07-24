@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import 'package:provider/provider.dart' as ctxProvider;
+import '../models/provider_model.dart';
 import '../constants/theme.dart';
-import './role_selection_screen.dart';
-import './provider_list_screen.dart';
-import './user_profile_screen.dart';
-import './user_bookings_screen.dart';
-import './favorites_screen.dart';
-import './provider_detail_screen.dart';
-import 'package:provider/provider.dart';
+import 'provider_list_screen.dart';
+import 'user_bookings_screen.dart';
+import 'user_profile_screen.dart';
+import 'favorites_screen.dart';
+import 'user_chats_screen.dart';
+import 'provider_detail_screen.dart'; // Import to access favoriteProviders
 
 class UserHomeScreen extends StatefulWidget {
   static const routeName = '/user-home';
-
+  
   const UserHomeScreen({super.key});
 
   @override
@@ -19,181 +19,271 @@ class UserHomeScreen extends StatefulWidget {
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
-  final List<Map<String, dynamic>> _serviceCategories = [
-    {
-      'name': 'Painter',
-      'icon': Icons.format_paint,
-      'color': Colors.orange.shade200,
-    },
-    {
-      'name': 'Electrician',
-      'icon': Icons.electrical_services,
-      'color': Colors.blue.shade200,
-    },
-    {
-      'name': 'TV Repair',
-      'icon': Icons.tv,
-      'color': Colors.purple.shade200,
-    },
-    {
-      'name': 'AC Repair',
-      'icon': Icons.ac_unit,
-      'color': Colors.teal.shade200,
-    },
-    {
-      'name': 'Plumber',
-      'icon': Icons.plumbing,
-      'color': Colors.red.shade200,
-    },
-    {
-      'name': 'Cleaning',
-      'icon': Icons.cleaning_services,
-      'color': Colors.green.shade200,
-    },
-    {
-      'name': 'Gardening',
-      'icon': Icons.yard,
-      'color': Colors.amber.shade200,
-    },
-    {
-      'name': 'Carpentry',
-      'icon': Icons.handyman,
-      'color': Colors.brown.shade200,
-    },
-  ];
+  int _currentIndex = 0;
+  late Future<List<Provider>> _providersFuture;
+  final PageController _pageController = PageController();
 
-  // Update location to use Jordanian cities
-  String _selectedLocation = 'Amman';
+  @override
+  void initState() {
+    super.initState();
+    _providersFuture = _getMockProviders();
+  }
 
-  // List of Jordanian cities
-  final List<String> _jordanCities = [
-    'Amman',
-    'Irbid',
-    'Zarqa',
-    'Mafraq',
-    'Ajloun',
-    'Jerash',
-    'Madaba',
-    'Balqa',
-    'Karak',
-    'Tafileh',
-    'Maan',
-    'Aqaba',
-  ];
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
-  int _selectedIndex = 0;
+  Future<List<Provider>> _getMockProviders() async {
+    // Mock data for demonstration
+    await Future.delayed(const Duration(seconds: 1));
+    return [
+      Provider(
+        id: '1',
+        fullName: 'Ahmed Al-Zahra',
+        serviceType: 'Electrician',
+        email: 'ahmed@example.com',
+        companyName: 'Ahmed Electrical Services',
+        serviceDescription: 'Professional electrical services for homes and businesses',
+        hourlyRate: 25.0,
+        location: ProviderLocation(
+          addressText: 'Amman, Jordan',
+          city: 'Amman',
+        ),
+        contactInfo: ProviderContactInfo(
+          phone: '+962791234567',
+        ),
+        averageRating: 4.5,
+        totalRatings: 25,
+      ),
+      Provider(
+        id: '2',
+        fullName: 'Fatima Hassan',
+        serviceType: 'Plumber',
+        email: 'fatima@example.com',
+        companyName: 'Fatima Plumbing Co.',
+        serviceDescription: 'Expert plumbing and water system services',
+        hourlyRate: 30.0,
+        location: ProviderLocation(
+          addressText: 'Irbid, Jordan',
+          city: 'Irbid',
+        ),
+        contactInfo: ProviderContactInfo(
+          phone: '+962791234568',
+        ),
+        averageRating: 4.8,
+        totalRatings: 18,
+      ),
+      Provider(
+        id: '3',
+        fullName: 'Omar Khalil',
+        serviceType: 'Painter',
+        email: 'omar@example.com',
+        companyName: 'Omar Painting Services',
+        serviceDescription: 'Quality painting and decoration services',
+        hourlyRate: 20.0,
+        location: ProviderLocation(
+          addressText: 'Zarqa, Jordan',
+          city: 'Zarqa',
+        ),
+        contactInfo: ProviderContactInfo(
+          phone: '+962791234569',
+        ),
+        averageRating: 4.2,
+        totalRatings: 12,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final size = MediaQuery.of(context).size;
-
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Location and Cart Header
-              _buildHeader(),
-
-              // Featured Service Card (Banner)
-              _buildFeaturedServiceBanner(),
-
-              // Service Categories Grid
-              _buildServiceCategoriesGrid(),
-
-              const SizedBox(height: 80), // Bottom padding for navigation bar
-            ],
-          ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return WillPopScope(
+      onWillPop: () async {
+        // Handle back button press
+        if (_currentIndex != 0) {
+          // If not on home tab, go back to home
+          setState(() {
+            _currentIndex = 0;
+          });
+          _pageController.animateToPage(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return false; // Don't pop the route
+        }
+        // If on home tab, allow normal back navigation
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? AppTheme.dark : AppTheme.light,
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          children: [
+            _buildHomeTab(),
+            const ProviderListScreen(),
+            const UserBookingsScreen(),
+            FavoritesScreen(
+              favoriteProviderIds: favoriteProviders,
+              showAppBar: false, // No AppBar when used as tab
+            ),
+            const UserProfileScreen(),
+          ],
         ),
+        bottomNavigationBar: _buildBottomNavigationBar(isDark),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Location Selector
-          Row(
-            children: [
-              Icon(Icons.location_on, size: 20, color: Colors.black),
-              const SizedBox(width: 4),
-              Text('Select City',
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(width: 8),
-              DropdownButton<String>(
-                value: _selectedLocation,
-                icon: const Icon(Icons.keyboard_arrow_down),
-                elevation: 16,
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold),
-                underline: Container(height: 0),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedLocation = newValue!;
-                  });
-                },
-                items:
-                    _jordanCities.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
 
-          // Cart/Notifications Icon
-          IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined),
-            onPressed: () {
-              // Navigate to cart or notifications
-            },
+  Widget _buildHomeTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return CustomScrollView(
+      slivers: [
+        // Custom App Bar
+        SliverAppBar(
+          expandedHeight: 120,
+          floating: false,
+          pinned: true,
+          backgroundColor: isDark ? AppTheme.dark : AppTheme.white,
+          elevation: 0,
+          automaticallyImplyLeading: false, // Remove back button
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.chat_rounded),
+              color: isDark ? AppTheme.white : AppTheme.primary,
+              onPressed: () {
+                // Navigate to user chats screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const UserChatsScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+          flexibleSpace: FlexibleSpaceBar(
+            title: Text(
+              'Jordan Service Provider',
+              style: TextStyle(
+                color: isDark ? AppTheme.white : AppTheme.black,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.primary,
+                    AppTheme.secondary,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        
+        // Welcome Section
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWelcomeCard(isDark),
+                const SizedBox(height: 24),
+                _buildQuickActions(isDark),
+                const SizedBox(height: 24),
+                _buildRecentProviders(isDark),
+                const SizedBox(height: 24),
+                _buildStatsCard(isDark),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWelcomeCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primary,
+            AppTheme.secondary,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFeaturedServiceBanner() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.orange,
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppTheme.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: const Icon(
+              Icons.home_rounded,
+              color: AppTheme.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo or Icon
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.home_work, color: Colors.orange),
-                ),
-                const SizedBox(width: 12),
-                // Text
                 Text(
-                  'JOSERVICE\nHome Maintenance Services',
+                  'Welcome back!',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.white,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Find the perfect service provider for your needs',
+                  style: TextStyle(
+                    color: AppTheme.white.withOpacity(0.9),
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -204,246 +294,458 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  Widget _buildServiceCategoriesGrid() {
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 1,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: _serviceCategories.length,
-      itemBuilder: (context, index) {
-        final category = _serviceCategories[index];
-        return GestureDetector(
-          onTap: () {
-            // Show location confirmation dialog before proceeding
-            _showLocationConfirmationDialog(category['name']);
-          },
-          child: Column(
-            children: [
-              // Icon Circle
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    category['icon'],
-                    color: category['color'],
-                    size: 28,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Category Name
-              Text(
-                category['name'],
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+  Widget _buildQuickActions(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: TextStyle(
+            color: isDark ? AppTheme.white : AppTheme.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-        );
-      },
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.search_rounded,
+                title: 'Find Services',
+                subtitle: 'Browse providers',
+                color: AppTheme.primary,
+                isDark: isDark,
+                onTap: () => _onTabTapped(1),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.calendar_today_rounded,
+                title: 'My Bookings',
+                subtitle: 'View appointments',
+                color: AppTheme.accent,
+                isDark: isDark,
+                onTap: () => _onTabTapped(2),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.favorite_rounded,
+                title: 'Favorites',
+                subtitle: 'Saved providers',
+                color: AppTheme.warning,
+                isDark: isDark,
+                onTap: () => _onTabTapped(3),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.person_rounded,
+                title: 'Profile',
+                subtitle: 'Manage account',
+                color: AppTheme.secondary,
+                isDark: isDark,
+                onTap: () => _onTabTapped(4),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  void _showLocationConfirmationDialog(String categoryName) {
-    final TextEditingController addressController = TextEditingController();
-    addressController.text = _selectedLocation; // Pre-fill with selected city
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Your Location'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Please confirm or update your location for $categoryName service',
-                style: TextStyle(fontSize: 14),
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: 'City',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_city),
-                      ),
-                      value: _selectedLocation,
-                      items: _jordanCities.map((String city) {
-                        return DropdownMenuItem<String>(
-                          value: city,
-                          child: Text(city),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            _selectedLocation = newValue;
-                          });
-                          addressController.text = newValue;
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: addressController,
-                decoration: InputDecoration(
-                  labelText: 'Detailed Address',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_on),
-                  hintText: 'Street, building, etc.',
-                ),
-                maxLines: 2,
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Icon(Icons.info_outline, size: 14, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'A detailed address helps service providers locate you easily',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancel'),
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.dark : AppTheme.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isDark 
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(25),
               ),
-              onPressed: () {
-                // Update the selected location if user changed it
-                setState(() {
-                  _selectedLocation =
-                      addressController.text.split(',').first.trim();
-                });
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: isDark ? AppTheme.white : AppTheme.black,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: isDark ? AppTheme.systemGray : AppTheme.systemGray,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                // Close dialog
-                Navigator.of(context).pop();
-
-                // Navigate to provider list with the category and location filter
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ProviderListScreen(
-                      initialSearch: 'Category: $categoryName',
-                      initialLocation: _selectedLocation,
+  Widget _buildRecentProviders(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recent Providers',
+              style: TextStyle(
+                color: isDark ? AppTheme.white : AppTheme.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton(
+              onPressed: () => _onTabTapped(1),
+              child: Text(
+                'See All',
+                style: TextStyle(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 200,
+          child: FutureBuilder<List<Provider>>(
+            future: _providersFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primary,
+                  ),
+                );
+              }
+              
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Error loading providers',
+                    style: TextStyle(
+                      color: isDark ? AppTheme.white : AppTheme.black,
                     ),
                   ),
                 );
-              },
-              child: Text('Confirm & Continue'),
-            ),
-          ],
-        );
-      },
+              }
+              
+              final providers = snapshot.data ?? [];
+              if (providers.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.search_off_rounded,
+                        size: 48,
+                        color: isDark ? AppTheme.systemGray : AppTheme.systemGray,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No providers found',
+                        style: TextStyle(
+                          color: isDark ? AppTheme.systemGray : AppTheme.systemGray,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: providers.take(5).length,
+                itemBuilder: (context, index) {
+                  final provider = providers[index];
+                  return Container(
+                    width: 160,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: _buildProviderCard(provider, isDark),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppTheme.primary,
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Bookings',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.list),
-          label: 'Categories',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite_border),
-          label: 'Favorites',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.more_horiz),
-          label: 'More',
-        ),
-      ],
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-
-        if (index != 0) {
-          // If not home
-          switch (index) {
-            case 1: // Bookings
-              Navigator.of(context).pushNamed(UserBookingsScreen.routeName);
-              break;
-            case 2: // Categories
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ProviderListScreen(),
+  Widget _buildProviderCard(Provider provider, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.dark : AppTheme.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark 
+              ? Colors.black.withOpacity(0.3)
+              : Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.business_rounded,
+                size: 40,
+                color: AppTheme.primary,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  provider.fullName ?? 'Unknown',
+                  style: TextStyle(
+                    color: isDark ? AppTheme.white : AppTheme.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              );
-              break;
-            case 3: // Favorites
-              // Use the global favorites set from provider_detail_screen.dart
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => FavoritesScreen(
-                    favoriteProviderIds: favoriteProviders,
+                const SizedBox(height: 4),
+                Text(
+                  provider.serviceType ?? 'Service',
+                  style: TextStyle(
+                    color: AppTheme.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              );
-              break;
-            case 4: // More/Profile
-              Navigator.of(context).pushNamed(UserProfileScreen.routeName);
-              break;
-          }
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      size: 16,
+                      color: AppTheme.warning,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${provider.averageRating?.toStringAsFixed(1) ?? '4.5'}',
+                      style: TextStyle(
+                        color: isDark ? AppTheme.systemGray : AppTheme.systemGray,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-          // Reset selection to home after navigation
-          setState(() {
-            _selectedIndex = 0;
-          });
-        }
-      },
+  Widget _buildStatsCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.dark : AppTheme.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: isDark 
+              ? Colors.black.withOpacity(0.3)
+              : Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Activity',
+            style: TextStyle(
+              color: isDark ? AppTheme.white : AppTheme.black,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  icon: Icons.calendar_today_rounded,
+                  value: '3',
+                  label: 'Active Bookings',
+                  color: AppTheme.primary,
+                  isDark: isDark,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: _buildStatItem(
+                  icon: Icons.favorite_rounded,
+                  value: '8',
+                  label: 'Favorites',
+                  color: AppTheme.warning,
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Column(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: isDark ? AppTheme.white : AppTheme.black,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: isDark ? AppTheme.systemGray : AppTheme.systemGray,
+            fontSize: 12,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomNavigationBar(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.dark : AppTheme.white,
+        boxShadow: [
+          BoxShadow(
+            color: isDark 
+              ? Colors.black.withOpacity(0.3)
+              : Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: isDark ? AppTheme.dark : AppTheme.white,
+        selectedItemColor: AppTheme.primary,
+        unselectedItemColor: AppTheme.systemGray,
+        elevation: 0,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search_rounded),
+            label: 'Services',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today_rounded),
+            label: 'Bookings',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite_rounded),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_rounded),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }

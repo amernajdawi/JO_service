@@ -32,7 +32,8 @@ class UserInfo {
 
 class AuthService with ChangeNotifier {
   final _storage = const FlutterSecureStorage();
-  final String _authBaseUrl = "${ApiService.getBaseUrl()}/auth";
+  
+  String get _authBaseUrl => "${ApiService.getBaseUrl()}/auth";
 
   // Using more specific keys for clarity with new _saveAuthData logic
   static const String _tokenKey = 'auth_token_key';
@@ -152,7 +153,7 @@ class AuthService with ChangeNotifier {
         'addressText': addressText, // Add addressText to JSON body
         // Populate other fields here
       }),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final responseData = json.decode(response.body);
     if (response.statusCode == 201 && responseData['token'] != null) {
@@ -188,7 +189,7 @@ class AuthService with ChangeNotifier {
         'phoneNumber': phoneNumber,
         'profilePictureUrl': profilePictureUrl,
       }),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final responseData = json.decode(response.body);
     if (response.statusCode == 201 && responseData['token'] != null) {
@@ -207,57 +208,73 @@ class AuthService with ChangeNotifier {
 
   Future<Map<String, dynamic>> loginUser(
       {required String email, required String password}) async {
-    final response = await http.post(
-      Uri.parse('$_authBaseUrl/user/login'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'email': email,
-        'password': password,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$_authBaseUrl/user/login'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': email,
+          'password': password,
+        }),
+      ).timeout(const Duration(seconds: 10)); // Add 10-second timeout
 
-    final responseData = json.decode(response.body);
-    if (response.statusCode == 200 && responseData['token'] != null) {
-      await _saveAuthData(
-          responseData['token'],
-          'user',
-          UserInfo(
-              id: responseData['user']['_id'],
-              email: email,
-              fullName: responseData['user']['fullName']));
-      return responseData; // Contains user and token
-    } else {
-      throw Exception(responseData['message'] ?? 'Failed to login user');
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200 && responseData['token'] != null) {
+        await _saveAuthData(
+            responseData['token'],
+            'user',
+            UserInfo(
+                id: responseData['user']['_id'],
+                email: email,
+                fullName: responseData['user']['fullName']));
+        return responseData; // Contains user and token
+      } else {
+        throw Exception(responseData['message'] ?? 'Failed to login user');
+      }
+    } catch (e) {
+      print('Login error: $e');
+      if (e.toString().contains('TimeoutException')) {
+        throw Exception('Connection timeout. Please check your network connection.');
+      }
+      throw Exception('Network error: ${e.toString()}');
     }
   }
 
   Future<Map<String, dynamic>> loginProvider(
       {required String email, required String password}) async {
-    final response = await http.post(
-      Uri.parse('$_authBaseUrl/provider/login'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'email': email,
-        'password': password,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$_authBaseUrl/provider/login'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': email,
+          'password': password,
+        }),
+      ).timeout(const Duration(seconds: 10)); // Add 10-second timeout
 
-    final responseData = json.decode(response.body);
-    if (response.statusCode == 200 && responseData['token'] != null) {
-      await _saveAuthData(
-          responseData['token'],
-          'provider',
-          UserInfo(
-              id: responseData['provider']['_id'],
-              email: email,
-              fullName: responseData['provider']['fullName']));
-      return responseData; // Contains provider and token
-    } else {
-      throw Exception(responseData['message'] ?? 'Failed to login provider');
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200 && responseData['token'] != null) {
+        await _saveAuthData(
+            responseData['token'],
+            'provider',
+            UserInfo(
+                id: responseData['provider']['_id'],
+                email: email,
+                fullName: responseData['provider']['fullName']));
+        return responseData; // Contains provider and token
+      } else {
+        throw Exception(responseData['message'] ?? 'Failed to login provider');
+      }
+    } catch (e) {
+      print('Login error: $e');
+      if (e.toString().contains('TimeoutException')) {
+        throw Exception('Connection timeout. Please check your network connection.');
+      }
+      throw Exception('Network error: ${e.toString()}');
     }
   }
 

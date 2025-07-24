@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/provider_model.dart';
+import '../models/chat_conversation.dart';
 import 'package:provider/provider.dart' as ctx; // Alias for provider package
 import '../services/auth_service.dart'; // To get token for API calls
 import './create_booking_screen.dart'; // For booking navigation
 import './favorites_screen.dart'; // For favorites screen
-// import './chat_screen.dart'; // For chat navigation
+import './chat_screen.dart'; // For chat navigation
 
 // Global set to track favorites across the app
 final Set<String> favoriteProviders = {};
@@ -148,9 +149,10 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                         backgroundColor:
                             Theme.of(context).colorScheme.primaryContainer,
                         backgroundImage: provider.profilePictureUrl != null &&
-                                provider.profilePictureUrl!.isNotEmpty
+                                provider.profilePictureUrl!.isNotEmpty &&
+                                provider.profilePictureUrl!.startsWith('http')
                             ? NetworkImage(provider.profilePictureUrl!)
-                            : null,
+                            : const AssetImage('assets/default_user.png') as ImageProvider,
                         child: (provider.profilePictureUrl == null ||
                                 provider.profilePictureUrl!.isEmpty)
                             ? Text(
@@ -308,13 +310,21 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                     icon: const Icon(Icons.chat_bubble_outline),
                     label: const Text('Chat with Provider'),
                     onPressed: () {
-                      // TODO: Navigate to ChatScreen
-                      // Navigator.of(context).pushNamed(
-                      //   ChatScreen.routeName,
-                      //   arguments: {'recipientId': provider.id, 'recipientName': provider.fullName ?? 'Provider'}
-                      // );
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Chatting with ${provider.fullName}')));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) {
+                            // Create a temporary conversation object to pass to the chat screen
+                            final conversation = ChatConversation(
+                              id: provider.id ?? 'unknown-provider', // Use provider ID as a temporary unique ID
+                              participantId: provider.id ?? 'unknown-provider',
+                              participantName: provider.fullName ?? 'Provider',
+                              participantAvatar: provider.profilePictureUrl,
+                              participantType: 'provider',
+                            );
+                            return ChatScreen(conversation: conversation);
+                          },
+                        ),
+                      );
                     },
                   ),
                 ),

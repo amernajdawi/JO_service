@@ -62,7 +62,7 @@ class ProviderContactInfo {
 }
 
 class Provider {
-  final String id;
+  final String? id;
   final String? fullName;
   final String? email; // Usually part of top-level, not contactInfo for login
   final String? companyName; // Can be same as fullName or separate
@@ -75,10 +75,17 @@ class Provider {
   final String? profilePictureUrl; // Renamed from profileImage for consistency
   final double? averageRating;
   final int? totalRatings;
-  // Add other fields like operationalHours, serviceAreas if needed
+  
+  // Admin management fields
+  final String? verificationStatus; // 'pending', 'verified', 'rejected'
+  final DateTime? joinedDate;
+  final double? rating; // Overall rating
+  final int? completedJobs;
+  final DateTime? lastActive;
+  final String? rejectionReason; // Reason for rejection if applicable
 
   Provider({
-    required this.id,
+    this.id,
     this.fullName,
     this.email,
     this.companyName,
@@ -91,6 +98,12 @@ class Provider {
     this.profilePictureUrl,
     this.averageRating,
     this.totalRatings,
+    this.verificationStatus,
+    this.joinedDate,
+    this.rating,
+    this.completedJobs,
+    this.lastActive,
+    this.rejectionReason,
   });
 
   factory Provider.fromJson(Map<String, dynamic> json) {
@@ -106,8 +119,19 @@ class Provider {
       return null;
     }
 
+    DateTime? parseDateTime(dynamic value) {
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
     return Provider(
-      id: json['_id'] as String, // Assuming your API returns _id
+      id: json['_id'] as String? ?? json['id'] as String?, // Assuming your API returns _id
       fullName: json['fullName'] as String?,
       email: json['email'] as String?,
       companyName: json['companyName'] as String?,
@@ -128,6 +152,14 @@ class Provider {
           json['profileImage'] as String?, // Fallback
       averageRating: parseDouble(json['averageRating']),
       totalRatings: parseInt(json['totalRatings']),
+      
+      // Admin management fields
+      verificationStatus: json['verificationStatus'] as String? ?? 'pending',
+      joinedDate: parseDateTime(json['joinedDate']) ?? parseDateTime(json['createdAt']),
+      rating: parseDouble(json['rating']) ?? parseDouble(json['averageRating']),
+      completedJobs: parseInt(json['completedJobs']) ?? 0,
+      lastActive: parseDateTime(json['lastActive']),
+      rejectionReason: json['rejectionReason'] as String?,
     );
   }
 
@@ -146,11 +178,62 @@ class Provider {
       'profilePictureUrl': profilePictureUrl,
       'averageRating': averageRating,
       'totalRatings': totalRatings,
+      'verificationStatus': verificationStatus,
+      'joinedDate': joinedDate?.toIso8601String(),
+      'rating': rating,
+      'completedJobs': completedJobs,
+      'lastActive': lastActive?.toIso8601String(),
+      'rejectionReason': rejectionReason,
     };
+  }
+
+  // Create a copy of the provider with updated fields (useful for admin updates)
+  Provider copyWith({
+    String? id,
+    String? fullName,
+    String? email,
+    String? companyName,
+    String? serviceType,
+    String? serviceDescription,
+    double? hourlyRate,
+    ProviderLocation? location,
+    ProviderContactInfo? contactInfo,
+    String? availabilityDetails,
+    String? profilePictureUrl,
+    double? averageRating,
+    int? totalRatings,
+    String? verificationStatus,
+    DateTime? joinedDate,
+    double? rating,
+    int? completedJobs,
+    DateTime? lastActive,
+    String? rejectionReason,
+  }) {
+    return Provider(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      email: email ?? this.email,
+      companyName: companyName ?? this.companyName,
+      serviceType: serviceType ?? this.serviceType,
+      serviceDescription: serviceDescription ?? this.serviceDescription,
+      hourlyRate: hourlyRate ?? this.hourlyRate,
+      location: location ?? this.location,
+      contactInfo: contactInfo ?? this.contactInfo,
+      availabilityDetails: availabilityDetails ?? this.availabilityDetails,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      averageRating: averageRating ?? this.averageRating,
+      totalRatings: totalRatings ?? this.totalRatings,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
+      joinedDate: joinedDate ?? this.joinedDate,
+      rating: rating ?? this.rating,
+      completedJobs: completedJobs ?? this.completedJobs,
+      lastActive: lastActive ?? this.lastActive,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+    );
   }
 
   @override
   String toString() {
-    return 'Provider{id: $id, fullName: $fullName, email: $email, serviceType: $serviceType}';
+    return 'Provider{id: $id, fullName: $fullName, email: $email, serviceType: $serviceType, verificationStatus: $verificationStatus}';
   }
 }

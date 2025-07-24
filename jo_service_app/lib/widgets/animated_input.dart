@@ -79,7 +79,7 @@ class _AnimatedInputState extends State<AnimatedInput>
 
     _positionAnimation = Tween<double>(
       begin: 18.0,
-      end: 0.0,
+      end: -8.0, // Changed from 0.0 to -8.0 to move label above the border
     ).animate(
       CurvedAnimation(
         parent: _animationController,
@@ -89,7 +89,7 @@ class _AnimatedInputState extends State<AnimatedInput>
 
     _sizeAnimation = Tween<double>(
       begin: 16.0,
-      end: 14.0,
+      end: 12.0, // Slightly smaller for better visibility
     ).animate(
       CurvedAnimation(
         parent: _animationController,
@@ -183,7 +183,7 @@ class _AnimatedInputState extends State<AnimatedInput>
         EdgeInsets.only(
           left: 15,
           right: 15,
-          top: 24,
+          top: 20, // Reduced from 24 to account for new margin
           bottom: widget.multiline ? 12 : 12,
         );
 
@@ -192,6 +192,7 @@ class _AnimatedInputState extends State<AnimatedInput>
       children: [
         Container(
           width: double.infinity,
+          margin: const EdgeInsets.only(top: 8.0), // Add top margin for floating label
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(AppTheme.radius),
@@ -205,15 +206,34 @@ class _AnimatedInputState extends State<AnimatedInput>
                 AnimatedBuilder(
                   animation: _animationController,
                   builder: (context, child) {
+                    final isFloating = _animationController.value > 0.5;
                     return Positioned(
-                      left: 16,
+                      left: 14,
                       top: _positionAnimation.value,
-                      child: Text(
-                        widget.label!,
-                        style: TextStyle(
-                          fontSize: _sizeAnimation.value,
-                          color: _colorAnimation.value,
-                          backgroundColor: Colors.transparent,
+                      child: Container(
+                        padding: isFloating 
+                            ? const EdgeInsets.symmetric(horizontal: 4.0)
+                            : EdgeInsets.zero,
+                        decoration: BoxDecoration(
+                          color: isFloating 
+                              ? (widget.disabled ? AppTheme.greyLight : AppTheme.white)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: isFloating ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ] : null,
+                        ),
+                        child: Text(
+                          widget.label!,
+                          style: TextStyle(
+                            fontSize: _sizeAnimation.value,
+                            color: _colorAnimation.value,
+                            fontWeight: isFloating ? FontWeight.w500 : FontWeight.w400,
+                          ),
                         ),
                       ),
                     );

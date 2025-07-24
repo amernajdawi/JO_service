@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:jo_service_app/screens/provider_detail_screen.dart'; // Added import
 import 'package:jo_service_app/services/auth_service.dart'; // Added import
 import 'package:jo_service_app/services/theme_service.dart'; // Import ThemeService
+import 'package:jo_service_app/services/background_service.dart'; // Import BackgroundService
+import 'package:jo_service_app/services/app_lifecycle_manager.dart'; // Import AppLifecycleManager
 import 'package:provider/provider.dart'; // Added import
 // import 'screens/splash_screen.dart'; // New initial screen // Commented out as SplashScreen is deleted
 import './screens/auth_check_screen.dart'; // Import AuthCheckScreen
@@ -16,14 +18,41 @@ import './screens/provider_signup_screen.dart'; // Import ProviderSignupScreen
 import './screens/user_bookings_screen.dart'; // Import UserBookingsScreen
 import './screens/provider_bookings_screen.dart'; // Import ProviderBookingsScreen
 import './screens/booking_detail_screen.dart'; // Import BookingDetailScreen
-import './screens/create_booking_screen.dart'; // Import CreateBookingScreen
+import './screens/admin_login_screen.dart'; // Import AdminLoginScreen
+import './screens/admin_dashboard_screen.dart'; // Import AdminDashboardScreen
+// import './screens/create_booking_screen.dart'; // Import CreateBookingScreen
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize background service
+  await BackgroundService.initialize();
+  
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final AppLifecycleManager _lifecycleManager = AppLifecycleManager();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize lifecycle manager
+    _lifecycleManager.initialize();
+  }
+
+  @override
+  void dispose() {
+    _lifecycleManager.dispose();
+    super.dispose();
+  }
 
   // This widget is the root of your application.
   @override
@@ -40,8 +69,13 @@ class MyApp extends StatelessWidget {
           theme: themeService.currentTheme,
           initialRoute:
               AuthCheckScreen.routeName, // Set AuthCheckScreen as initial route
+          home: const RoleSelectionScreen(), // Fallback home screen
           onGenerateRoute: (settings) {
             switch (settings.name) {
+              // Home route
+              case '/':
+                return MaterialPageRoute(
+                    builder: (_) => const RoleSelectionScreen());
               // case SplashScreen.routeName: // Commented out
               // return MaterialPageRoute(builder: (_) => const SplashScreen()); // Commented out
               // Add your other primary routes here if they don't take arguments
@@ -84,6 +118,13 @@ class MyApp extends StatelessWidget {
                     .routeName: // Added ProviderSignUpScreen route
                 return MaterialPageRoute(
                     builder: (_) => const ProviderSignUpScreen());
+              // Admin routes
+              case AdminLoginScreen.routeName: // Added AdminLoginScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const AdminLoginScreen());
+              case AdminDashboardScreen.routeName: // Added AdminDashboardScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const AdminDashboardScreen());
               case ProviderDetailScreen.routeName:
                 if (settings.arguments is String) {
                   final providerId = settings.arguments as String;
@@ -117,15 +158,11 @@ class MyApp extends StatelessWidget {
                     ),
                   );
                 }
-              // Default or unknown route
+              // Default or unknown route - redirect to role selection
               default:
-                // You can navigate to a 404 page or a default screen
+                // Instead of showing 404, redirect to role selection screen
                 return MaterialPageRoute(
-                  builder: (_) => Scaffold(
-                    appBar: AppBar(title: const Text('Page Not Found')),
-                    body: const Center(
-                        child: Text('Sorry, this page doesn\'t exist.')),
-                  ),
+                  builder: (_) => const RoleSelectionScreen(),
                 );
             }
           },

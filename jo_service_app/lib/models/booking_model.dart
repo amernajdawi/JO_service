@@ -8,6 +8,7 @@ class Booking {
   final DateTime serviceDateTime;
   final String? serviceLocationDetails;
   final String? userNotes;
+  final List<String>? photos;
   final String status;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -19,6 +20,7 @@ class Booking {
     required this.serviceDateTime,
     this.serviceLocationDetails,
     this.userNotes,
+    this.photos,
     required this.status,
     this.createdAt,
     this.updatedAt,
@@ -40,14 +42,15 @@ class Booking {
       user: json['user'] != null ? User.fromJson(json['user']) : null,
       provider:
           json['provider'] != null ? Provider.fromJson(json['provider']) : null,
-      serviceDateTime: DateTime.parse(json['serviceDateTime']),
+      serviceDateTime: _parseDateTime(json['serviceDateTime']),
       serviceLocationDetails: json['serviceLocationDetails'],
       userNotes: json['userNotes'],
+      photos: json['photos'] != null ? List<String>.from(json['photos']) : null,
       status: json['status'],
       createdAt:
-          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+          json['createdAt'] != null ? _parseDateTime(json['createdAt']) : null,
       updatedAt:
-          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+          json['updatedAt'] != null ? _parseDateTime(json['updatedAt']) : null,
     );
   }
 
@@ -59,24 +62,39 @@ class Booking {
       'serviceDateTime': serviceDateTime.toIso8601String(),
       'serviceLocationDetails': serviceLocationDetails,
       'userNotes': userNotes,
+      'photos': photos,
       'status': status,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
+  // Helper method to parse dates with timezone handling
+  static DateTime _parseDateTime(String dateString) {
+    try {
+      // Parse the ISO string and convert to local timezone
+      final utcDateTime = DateTime.parse(dateString);
+      return utcDateTime.toLocal();
+    } catch (e) {
+      // Fallback to direct parsing if timezone conversion fails
+      return DateTime.parse(dateString);
+    }
+  }
+
   // Helper method to create a booking request JSON
-  static Map<String, dynamic> createBookingRequest({
+    static Map<String, dynamic> createBookingRequest({
     required String providerId,
     required DateTime serviceDateTime,
     String? serviceLocationDetails,
     String? userNotes,
+    List<String>? photos, // Add photos parameter
   }) {
     return {
       'providerId': providerId,
-      'serviceDateTime': serviceDateTime.toIso8601String(),
+      'serviceDateTime': serviceDateTime.toUtc().toIso8601String(),
       'serviceLocationDetails': serviceLocationDetails,
       'userNotes': userNotes,
+      'photos': photos ?? [], // Include photos in the request
     };
   }
 

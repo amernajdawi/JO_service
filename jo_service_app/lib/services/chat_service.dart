@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/chat_message.model.dart';
@@ -21,8 +22,11 @@ class ChatService {
     final token = await _authService.getToken();
     _currentUserId = await _authService.getUserId();
 
+    print('ChatService: token length: ${token?.length ?? 0}');
+    print('ChatService: currentUserId: $_currentUserId');
+
     if (token == null || token.isEmpty || _currentUserId == null) {
-      print('ChatService Error: Not authenticated.');
+      print('ChatService Error: Not authenticated. Token: ${token != null ? 'present' : 'null'}, UserId: ${_currentUserId != null ? 'present' : 'null'}');
       _messageController
           ?.addError('Authentication required to connect to chat.');
       return false;
@@ -32,16 +36,19 @@ class ChatService {
     String wsBaseUrl;
     if (kIsWeb) {
       wsBaseUrl = 'ws://localhost:3000'; // Use ws:// for web
+    } else if (Platform.isIOS) {
+      // iOS device or simulator - use Mac's IP address
+      wsBaseUrl = 'ws://10.46.6.119:3000';
     } else {
-      // Assuming Android for non-web. iOS might use localhost.
-      wsBaseUrl = 'ws://10.0.2.2:3000'; // Use ws:// for mobile
+      // Android emulator
+      wsBaseUrl = 'ws://10.0.2.2:3000';
     }
 
     final url =
         Uri.parse('$wsBaseUrl?token=$token'); // Pass token as query param
 
+    print('Connecting to WebSocket: $url');
     try {
-      print('Connecting to WebSocket: $url');
       _channel = WebSocketChannel.connect(url);
       print('WebSocket Connected.');
 

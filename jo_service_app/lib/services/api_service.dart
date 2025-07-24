@@ -38,8 +38,12 @@ class ApiService {
     if (kIsWeb) {
       // Running on the web
       return 'http://localhost:3000/api';
+    } else if (Platform.isIOS) {
+      // iOS device - use Mac's local network IP
+      // If this doesn't work on simulator, change back to localhost
+      return 'http://10.46.6.119:3000/api';
     } else {
-      // Assuming Android emulator for non-web, adjust if necessary for iOS sim or physical devices
+      // Android emulator
       return 'http://10.0.2.2:3000/api';
     }
   }
@@ -189,6 +193,24 @@ class ApiService {
     }
   }
 
+  // Delete a specific message
+  Future<void> deleteMessage(String messageId, String token) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/chats/messages/$messageId'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 
+          'Failed to delete message (Status Code: ${response.statusCode})');
+    }
+  }
+
   // Add this method to upload profile picture
   Future<Provider?> uploadProfilePicture(String token, File imageFile) async {
     if (kIsWeb) {
@@ -325,6 +347,122 @@ class ApiService {
     } catch (e) {
       print('Exception in uploadUserProfilePicture: $e');
       throw Exception('Failed to upload profile picture: $e');
+    }
+  }
+
+  // Admin API methods
+  
+  // Get all providers for admin dashboard
+  Future<Map<String, dynamic>> getProvidersForAdmin(String token, {
+    int page = 1,
+    String? status,
+    String? serviceType,
+    String? city,
+  }) async {
+    final String baseUrl = getBaseUrl();
+    
+    // Build query parameters
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': '50', // Get more providers for admin
+    };
+    
+    if (status != null) queryParams['status'] = status;
+    if (serviceType != null) queryParams['serviceType'] = serviceType;
+    if (city != null) queryParams['city'] = city;
+    
+    final uri = Uri.parse('$baseUrl/admin/providers').replace(
+      queryParameters: queryParams,
+    );
+    
+    final response = await http.get(
+      uri,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['data'];
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to fetch providers');
+    }
+  }
+
+  // Update provider verification status
+  Future<Map<String, dynamic>> updateProviderStatus(
+    String token,
+    String providerId,
+    String status, {
+    String? rejectionReason,
+  }) async {
+    final String baseUrl = getBaseUrl();
+    
+    final requestBody = {
+      'status': status,
+      if (rejectionReason != null) 'rejectionReason': rejectionReason,
+    };
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/admin/providers/$providerId/status'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode(requestBody),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to update provider status');
+    }
+  }
+
+  // Admin login
+  Future<Map<String, dynamic>> adminLogin(String email, String password) async {
+    final String baseUrl = getBaseUrl();
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/login'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: json.encode({
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Admin login failed');
+    }
+  }
+
+  // Get admin dashboard statistics
+  Future<Map<String, dynamic>> getAdminDashboardStats(String token) async {
+    final String baseUrl = getBaseUrl();
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/dashboard/stats'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to fetch dashboard stats');
     }
   }
 }

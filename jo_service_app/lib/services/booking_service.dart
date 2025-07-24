@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../models/booking_model.dart';
 import './api_service.dart';
 import './auth_service.dart';
@@ -7,32 +9,42 @@ import './auth_service.dart';
 class BookingService {
   final String _baseUrl = '${ApiService.getBaseUrl()}/bookings';
 
-  // Create a new booking
+  // Create a new booking, with or without photos
   Future<Booking> createBooking({
     required String token,
     required String providerId,
     required DateTime serviceDateTime,
     String? serviceLocationDetails,
     String? userNotes,
+    List<String>? photoPaths, // Changed to List<String>
   }) async {
     try {
-      final requestBody = Booking.createBookingRequest(
-        providerId: providerId,
-        serviceDateTime: serviceDateTime,
-        serviceLocationDetails: serviceLocationDetails,
-        userNotes: userNotes,
-      );
+      final uri = Uri.parse(_baseUrl);
+      final request = http.MultipartRequest('POST', uri);
 
-      print('Creating booking with request: $requestBody');
+      request.headers['Authorization'] = 'Bearer $token';
 
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(requestBody),
-      );
+      // Add text fields
+      request.fields['providerId'] = providerId;
+      request.fields['serviceDateTime'] = serviceDateTime.toUtc().toIso8601String();
+      if (serviceLocationDetails != null) {
+        request.fields['serviceLocationDetails'] = serviceLocationDetails;
+      }
+      if (userNotes != null) {
+        request.fields['userNotes'] = userNotes;
+      }
+
+      // Add photo files if paths are provided
+      if (photoPaths != null && photoPaths.isNotEmpty) {
+        for (var path in photoPaths) {
+          request.files.add(await http.MultipartFile.fromPath('photos', path));
+        }
+      }
+
+      print('Sending booking request with ${photoPaths?.length ?? 0} photos.');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       print('Booking creation response status: ${response.statusCode}');
       print('Booking creation response body: ${response.body}');
@@ -43,8 +55,8 @@ class BookingService {
         throw Exception('Failed to create booking: ${response.body}');
       }
     } catch (e) {
-      print('Error creating booking: $e');
-      throw Exception('Error creating booking: $e');
+      print('Error in createBooking: $e');
+      throw Exception('Failed to create booking.');
     }
   }
 

@@ -746,7 +746,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
   }
 
   Widget _buildProviderCard(Provider provider) {
-    final isFavorite = favoriteProviders.contains(provider.id);
+    final isFavorite = provider.id != null && favoriteProviders.contains(provider.id);
 
     // Determine provider location info
     String? providerCity = provider.location?.city;
@@ -773,7 +773,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
         onTap: () {
           Navigator.of(context).pushNamed(
             ProviderDetailScreen.routeName,
-            arguments: provider.id,
+            arguments: provider.id ?? '',
           );
         },
         borderRadius: BorderRadius.circular(AppTheme.radius),
@@ -789,7 +789,6 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
@@ -800,50 +799,57 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: isFavorite ? Colors.red : AppTheme.grey,
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: Icon(
+                            isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: isFavorite ? Colors.red : AppTheme.grey,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            if (provider.id != null) {
+                              _toggleFavorite(provider.id!);
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(isFavorite
+                                    ? 'Removed from favorites'
+                                    : 'Added to favorites'),
+                                duration: Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
                               ),
-                              onPressed: () {
-                                _toggleFavorite(provider.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(isFavorite
-                                        ? 'Removed from favorites'
-                                        : 'Added to favorites'),
-                                    duration: Duration(seconds: 2),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                              tooltip: isFavorite
-                                  ? 'Remove from favorites'
-                                  : 'Add to favorites',
-                              padding: EdgeInsets.zero,
-                              constraints: BoxConstraints(),
+                            );
+                          },
+                          tooltip: isFavorite
+                              ? 'Remove from favorites'
+                              : 'Add to favorites',
+                          padding: EdgeInsets.all(4),
+                          constraints: BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
+                            child: Text(
+                              '\$${provider.hourlyRate ?? 'N/A'}/hr',
+                              style: TextStyle(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
                               ),
-                              child: Text(
-                                '\$${provider.hourlyRate ?? 'N/A'}/hr',
-                                style: TextStyle(
-                                  color: AppTheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

@@ -1,491 +1,898 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:provider/provider.dart'
-    as ctxProvider; // Aliased provider import
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart' as provider_package;
 import 'package:image_picker/image_picker.dart';
-import '../models/provider_model.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../services/auth_service.dart';
 import '../services/api_service.dart';
-import '../services/auth_service.dart'; // For AuthService type and its methods
+import '../models/provider_model.dart';
 
 class EditProviderProfileScreen extends StatefulWidget {
   const EditProviderProfileScreen({super.key});
 
   @override
-  State<EditProviderProfileScreen> createState() =>
-      _EditProviderProfileScreenState();
+  State<EditProviderProfileScreen> createState() => _EditProviderProfileScreenState();
 }
 
-class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
-  final ApiService _apiService = ApiService();
-  Future<Provider?>? _providerProfileFuture;
-  Provider? _currentProvider; // Store the current provider data
-  final ImagePicker _picker = ImagePicker();
-  File? _imageFile;
+class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
+    with TickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+  final _apiService = ApiService();
+  final _imagePicker = ImagePicker();
+  bool _isLoading = false;
+  bool _isSaving = false;
   bool _isUploading = false;
+  File? _selectedImage;
+  String? _currentProfilePictureUrl;
 
-  bool _isEditing = false; // To toggle edit mode
-  final _formKey = GlobalKey<FormState>(); // For form validation
-
-  // TextEditingControllers for editable fields
-  final _fullNameController = TextEditingController();
-  final _companyNameController = TextEditingController();
-  final _serviceTypeController = TextEditingController();
-  final _serviceDescriptionController = TextEditingController();
+  // Form controllers
+  final _businessNameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _servicesController = TextEditingController();
   final _hourlyRateController = TextEditingController();
-  final _addressTextController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _availabilityDetailsController = TextEditingController();
-  final _profilePictureUrlController = TextEditingController();
+  final _addressController = TextEditingController();
+
+  // Animation controllers
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _scaleController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    // It's good practice to ensure context is available for Provider.of
-    // and to handle async operations safely within initState.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        // Check if mounted before accessing context dependent things
-        _loadProfile();
-      }
-    });
-  }
+    
+    // Initialize animations
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
 
-  void _loadProfile() async {
-    // Get AuthService from Provider
-    final authService = ctxProvider.Provider.of<AuthService>(context,
-        listen: false); // Use alias
-    final token = await authService.getToken();
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
 
-    if (token == null || token.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication token not found. Please log in.')),
-        );
-        // Consider popping or redirecting more robustly
-        if (Navigator.canPop(context)) {
-          Navigator.of(context).pop();
-        } else {
-          // If cannot pop (e.g. it's the first screen after some error),
-          // navigate to a safe place like RoleSelectionScreen.
-          // This depends on how EditProviderProfileScreen can be reached.
-          // For now, we assume it can be popped.
-        }
-      }
-      // Set future to an error if token is missing to ensure FutureBuilder shows error
-      setState(() {
-        _providerProfileFuture =
-            Future.error(Exception('Authentication token not found.'));
-      });
-      return;
-    }
-    setState(() {
-      _providerProfileFuture =
-          _apiService.getMyProviderProfile(token).then((provider) {
-        if (provider != null) {
-          _currentProvider = provider; // Store loaded provider data
-          _initializeControllers(provider); // Initialize controllers
-        }
-        return provider;
-      });
-    });
-  }
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
 
-  void _initializeControllers(Provider provider) {
-    _fullNameController.text = provider.fullName ?? '';
-    _companyNameController.text = provider.companyName ?? '';
-    _serviceTypeController.text = provider.serviceType ?? '';
-    _serviceDescriptionController.text = provider.serviceDescription ?? '';
-    _hourlyRateController.text = provider.hourlyRate?.toString() ?? '';
-    _addressTextController.text = provider.location?.addressText ?? '';
-    _phoneController.text = provider.contactInfo?.phone ?? '';
-    _availabilityDetailsController.text = provider.availabilityDetails ?? '';
-    _profilePictureUrlController.text = provider.profilePictureUrl ?? '';
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.elasticOut,
+    ));
+
+    // Start animations
+    _fadeController.forward();
+    _slideController.forward();
+    _scaleController.forward();
+    
+    _loadProviderProfile();
   }
 
   @override
   void dispose() {
-    _fullNameController.dispose();
-    _companyNameController.dispose();
-    _serviceTypeController.dispose();
-    _serviceDescriptionController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
+    _scaleController.dispose();
+    _businessNameController.dispose();
+    _descriptionController.dispose();
+    _servicesController.dispose();
     _hourlyRateController.dispose();
-    _addressTextController.dispose();
     _phoneController.dispose();
-    _availabilityDetailsController.dispose();
-    _profilePictureUrlController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
-  Future<void> _saveProfile() async {
-    print('[DEBUG] _saveProfile called'); // 1. Check if called
-    if (_formKey.currentState?.validate() ?? false) {
-      final authService =
-          ctxProvider.Provider.of<AuthService>(context, listen: false);
-      final token = await authService.getToken();
-      print('[DEBUG] Token: $token'); // 2. Check token
-      print(
-          '[DEBUG] Current Provider ID: ${_currentProvider?.id}'); // 2. Check current provider
+  Future<void> _loadProviderProfile() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-      if (token == null || token.isEmpty || _currentProvider == null) {
-        print('[DEBUG] Token or currentProvider is null/empty. Aborting save.');
-        if (mounted) {
+    try {
+      final authService = provider_package.Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+      final userId = await authService.getUserId();
+
+      if (token == null || userId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Authentication error. Cannot save profile.')),
+          const SnackBar(content: Text('Authentication error. Please login again.')),
           );
-        }
         return;
       }
 
-      final Map<String, dynamic> updatedData = {
-        'fullName': _fullNameController.text,
-        'companyName': _companyNameController.text,
-        'serviceType': _serviceTypeController.text,
-        'serviceDescription': _serviceDescriptionController.text,
-        'hourlyRate': double.tryParse(_hourlyRateController.text),
-        'location': {'addressText': _addressTextController.text},
-        'contactInfo': {'phone': _phoneController.text},
-        'availabilityDetails': _availabilityDetailsController.text,
-        'profilePictureUrl': _profilePictureUrlController.text,
-      };
-      print(
-          '[DEBUG] UpdatedData being sent: $updatedData'); // 3. Check data being sent
-
-      try {
-        print('[DEBUG] Calling _apiService.updateMyProviderProfile...');
-        final updatedProvider =
-            await _apiService.updateMyProviderProfile(token, updatedData);
-        print(
-            '[DEBUG Client] Received updatedProvider object from API: ${updatedProvider.toJson()}');
-        print(
-            '[DEBUG] Profile updated successfully on API. Response: $updatedProvider');
+      final provider = await _apiService.getMyProviderProfile(token);
 
         setState(() {
-          print('[DEBUG] setState called after successful save.');
-          _currentProvider = updatedProvider;
-          _initializeControllers(updatedProvider);
-          _isEditing = false;
-          _providerProfileFuture = Future.value(updatedProvider);
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile updated successfully!')),
-          );
-        }
+        _businessNameController.text = provider.companyName ?? provider.fullName ?? '';
+        _descriptionController.text = provider.serviceDescription ?? '';
+        _servicesController.text = provider.serviceType ?? '';
+        _hourlyRateController.text = provider.hourlyRate?.toString() ?? '';
+        _phoneController.text = provider.contactInfo?.phone ?? '';
+        _addressController.text = provider.location?.addressText ?? '';
+        _currentProfilePictureUrl = provider.profilePictureUrl;
+        _isLoading = false;
+      });
       } catch (e) {
-        print('[DEBUG] Error saving profile: $e'); // 5. Check for errors
-        if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update profile: $e')),
+        SnackBar(content: Text('Error loading profile: $e')),
           );
-        }
-      }
-    } else {
-      print('[DEBUG] Form validation failed.');
     }
   }
 
-  // Add method to pick image from gallery
   Future<void> _pickImage() async {
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text(
-                'Image upload is not supported in web mode. Please use the mobile app.')),
+          content: Text('Image upload is not supported on web. Please use the mobile app.'),
+          backgroundColor: Color(0xFFFF3B30),
+        ),
       );
       return;
     }
 
     try {
-      final XFile? pickedFile =
-          await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
       if (pickedFile != null) {
         setState(() {
-          _imageFile = File(pickedFile.path);
+          _selectedImage = File(pickedFile.path);
         });
-        await _uploadProfilePicture();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking image: $e'),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
+      );
     }
   }
 
-  // Add method to upload profile picture
-  Future<void> _uploadProfilePicture() async {
-    if (_imageFile == null) return;
+  Future<void> _takePhoto() async {
+    if (kIsWeb) {
+        ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Camera is not supported on web. Please use the mobile app.'),
+          backgroundColor: Color(0xFFFF3B30),
+        ),
+      );
+      return;
+    }
 
     try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error taking photo: $e'),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
+      );
+    }
+  }
+
+  Future<void> _uploadProfilePicture() async {
+    if (_selectedImage == null) return;
+
       setState(() {
         _isUploading = true;
       });
 
-      final authService =
-          ctxProvider.Provider.of<AuthService>(context, listen: false);
+    try {
+      final authService = provider_package.Provider.of<AuthService>(context, listen: false);
       final token = await authService.getToken();
 
-      if (token == null || token.isEmpty) {
-        if (mounted) {
+      if (token == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Authentication error. Cannot upload image.')),
+            content: Text('Authentication error. Please login again.'),
+            backgroundColor: Color(0xFFFF3B30),
+          ),
           );
-        }
-        setState(() {
-          _isUploading = false;
-        });
         return;
       }
 
-      final updatedProvider =
-          await _apiService.uploadProfilePicture(token, _imageFile!);
+      final updatedProvider = await _apiService.uploadProfilePicture(token, _selectedImage!);
+      
       if (updatedProvider != null) {
         setState(() {
-          _currentProvider = updatedProvider;
-          _profilePictureUrlController.text =
-              updatedProvider.profilePictureUrl ?? '';
+          _currentProfilePictureUrl = updatedProvider.profilePictureUrl;
+          _selectedImage = null; // Clear selected image after successful upload
           _isUploading = false;
-          _imageFile = null;
         });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Profile picture uploaded successfully!')),
-          );
-        }
-      }
-    } catch (e) {
-      print('Error uploading profile picture: $e');
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload profile picture: $e')),
+          const SnackBar(
+            content: Text('Profile picture uploaded successfully!'),
+            backgroundColor: Color(0xFF34C759),
+          ),
         );
       }
+    } catch (e) {
       setState(() {
         _isUploading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading profile picture: $e'),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
+      );
     }
   }
 
-  Widget _buildProfileDetail(String title, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$title: ',
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Expanded(
-              child:
-                  Text(value ?? 'N/A', style: const TextStyle(fontSize: 16))),
-        ],
-      ),
-    );
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final authService = provider_package.Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+      final userId = await authService.getUserId();
+
+      if (token == null || userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Authentication error. Please login again.')),
+        );
+        return;
+      }
+
+      final updatedData = {
+        'fullName': _businessNameController.text.trim(),
+        'companyName': _businessNameController.text.trim(),
+        'serviceDescription': _descriptionController.text.trim(),
+        'serviceType': _servicesController.text.trim(),
+        'hourlyRate': double.tryParse(_hourlyRateController.text) ?? 0.0,
+        'contactInfo': {'phone': _phoneController.text.trim()},
+        'location': {'addressText': _addressController.text.trim()},
+      };
+
+      await _apiService.updateMyProviderProfile(token, updatedData);
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Color(0xFF34C759),
+        ),
+      );
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      setState(() {
+        _isSaving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating profile: $e'),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
+      );
+    }
   }
 
-  Widget _buildEditableProfileDetail(
-      String title, TextEditingController controller,
-      {TextInputType keyboardType = TextInputType.text,
-      bool isNumeric = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: title,
-          border: const OutlineInputBorder(),
+  void _showImagePickerDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        keyboardType: keyboardType,
-        validator: (value) {
-          if (isNumeric) {
-            // Only proceed if numeric validation is needed
-            if (value == null || value.isEmpty) {
-              // If numeric is expected, an empty value might be invalid or valid depending on requirements.
-              // For now, let's assume an empty value is fine if not mandatory.
-              // If it should be mandatory and numeric, add: return 'This field requires a number';
-            } else {
-              // At this point, value is not null and not empty.
-              if (double.tryParse(value) == null) {
-                // 'value' is now safe to pass directly
-                return 'Please enter a valid number';
-              }
-            }
-          }
-          // Add other non-numeric validations here if needed, e.g. for 'Full Name'
-          // if (title == 'Full Name' && (value == null || value.isEmpty)) {
-          //   return 'Full Name cannot be empty';
-          // }
-          return null; // No errors
-        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF007AFF)),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF007AFF)),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _takePhoto();
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      appBar: AppBar(
-        title:
-            Text(_isEditing ? 'Edit Provider Profile' : 'My Provider Profile'),
-        actions: [
+      backgroundColor: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: SafeArea(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF007AFF),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      // Custom App Bar
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDark 
+                                ? Colors.black.withOpacity(0.1)
+                                : Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
           IconButton(
-            icon: Icon(_isEditing ? Icons.save : Icons.edit),
-            tooltip: _isEditing ? 'Save Profile' : 'Edit Profile',
-            onPressed: () {
-              if (_isEditing) {
-                _saveProfile();
-              } else {
-                setState(() {
-                  _isEditing = true;
-                  // Ensure controllers are initialized if _currentProvider exists
-                  if (_currentProvider != null) {
-                    _initializeControllers(_currentProvider!);
-                  }
-                });
-              }
-            },
+                              icon: Icon(
+                                Icons.arrow_back_ios_rounded,
+                                color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                size: 20,
+                              ),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Edit Profile',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                            if (_isSaving)
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF007AFF),
+                                ),
+                              )
+                            else
+                              TextButton(
+                                onPressed: _saveProfile,
+                                child: Text(
+                                  'Save',
+                                  style: TextStyle(
+                                    color: const Color(0xFF007AFF),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
           ),
         ],
       ),
-      body: FutureBuilder<Provider?>(
-        future: _providerProfileFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text('Error loading profile: ${snapshot.error}'),
-              ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(
-                child: Text('Could not load provider profile.'));
-          }
-
-          final provider = snapshot.data!;
-          // If not editing, ensure controllers are synced if they haven't been or data changed.
-          // This might be redundant if _loadProfile always sets _currentProvider and calls _initializeControllers
-          // but serves as a safeguard.
-          if (!_isEditing && _currentProvider != provider) {
-            _currentProvider = provider;
-            _initializeControllers(provider);
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+                      ),
+                      
+                      // Form Content
+                      Expanded(
             child: Form(
-              // Wrap content in a Form
               key: _formKey,
+                          child: ListView(
+                            padding: const EdgeInsets.all(20),
+                            children: [
+                              // Profile Header with Photo
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isDark 
+                                        ? Colors.black.withOpacity(0.2)
+                                        : Colors.black.withOpacity(0.05),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Center(
-                    child: Stack(
+                                  children: [
+                                    // Profile Picture Section
+                                    Stack(
                       children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundImage: _imageFile != null
-                              ? FileImage(_imageFile!)
-                              : (_isEditing
-                                  ? (_profilePictureUrlController
-                                          .text.isNotEmpty
-                                      ? NetworkImage(
-                                              _profilePictureUrlController.text)
-                                          as ImageProvider<Object>
-                                      : null)
-                                  : (provider.profilePictureUrl != null &&
-                                          provider.profilePictureUrl!.isNotEmpty
-                                      ? NetworkImage(
-                                              provider.profilePictureUrl!)
-                                          as ImageProvider<Object>
-                                      : null)),
-                          child: _isUploading
-                              ? const CircularProgressIndicator()
-                              : (_imageFile == null &&
-                                      (_isEditing
-                                          ? _profilePictureUrlController
-                                              .text.isEmpty
-                                          : (provider.profilePictureUrl ==
-                                                  null ||
-                                              provider
-                                                  .profilePictureUrl!.isEmpty))
-                                  ? const Icon(Icons.person, size: 50)
-                                  : null),
-                        ),
+                                        Container(
+                                          width: 120,
+                                          height: 120,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(60),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: isDark 
+                                                  ? Colors.black.withOpacity(0.3)
+                                                  : Colors.black.withOpacity(0.1),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 10),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(60),
+                                            child: _selectedImage != null
+                                                ? Image.file(
+                                                    _selectedImage!,
+                                                    fit: BoxFit.cover,
+                                                    width: 120,
+                                                    height: 120,
+                                                  )
+                                                : _currentProfilePictureUrl != null && _currentProfilePictureUrl!.isNotEmpty && _currentProfilePictureUrl!.startsWith('http')
+                                                    ? Image.network(
+                                                        _currentProfilePictureUrl!,
+                                                        fit: BoxFit.cover,
+                                                        width: 120,
+                                                        height: 120,
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return Container(
+                                                            decoration: BoxDecoration(
+                                                              gradient: const LinearGradient(
+                                                                colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+                                                                begin: Alignment.topLeft,
+                                                                end: Alignment.bottomRight,
+                                                              ),
+                                                              borderRadius: BorderRadius.circular(60),
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons.business_rounded,
+                                                              color: Colors.white,
+                                                              size: 50,
+                                                            ),
+                                                          );
+                                                        },
+                                                      )
+                                                    : Container(
+                                                        decoration: BoxDecoration(
+                                                          gradient: const LinearGradient(
+                                                            colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+                                                            begin: Alignment.topLeft,
+                                                            end: Alignment.bottomRight,
+                                                          ),
+                                                          borderRadius: BorderRadius.circular(60),
+                                                        ),
+                                                        child: const Icon(
+                                                          Icons.business_rounded,
+                                                          color: Colors.white,
+                                                          size: 50,
+                                                        ),
+                                                      ),
+                                          ),
+                                        ),
+                                        // Upload Button
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: IconButton(
-                            icon: const Icon(Icons.camera_alt),
-                            onPressed: _pickImage,
-                            color: Theme.of(context).primaryColor,
-                            tooltip: 'Pick Image',
+                                          child: Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF007AFF),
+                                              borderRadius: BorderRadius.circular(18),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFF007AFF).withOpacity(0.3),
+                                                  blurRadius: 10,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Material(
+                                              color: Colors.transparent,
+                                              child: InkWell(
+                                                onTap: _showImagePickerDialog,
+                                                borderRadius: BorderRadius.circular(18),
+                                                child: const Icon(
+                                                  Icons.camera_alt,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Business Profile',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Update your business information and photo',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark ? Colors.white54 : const Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                    // Upload Photo Button
+                                    if (_selectedImage != null) ...[
+                                      const SizedBox(height: 16),
+                                      Container(
+                                        width: double.infinity,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [Color(0xFF34C759), Color(0xFF30D158)],
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFF34C759).withOpacity(0.3),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: _isUploading ? null : _uploadProfilePicture,
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: Center(
+                                              child: _isUploading
+                                                  ? const SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child: CircularProgressIndicator(
+                                                        color: Colors.white,
+                                                        strokeWidth: 2,
+                                                      ),
+                                                    )
+                                                  : const Text(
+                                                      'Upload Photo',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 20),
+                              
+                              // Business Name
+                              _buildInputField(
+                                controller: _businessNameController,
+                                label: 'Business Name',
+                                icon: Icons.business_rounded,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Business name is required';
+                                  }
+                                  return null;
+                                },
+                                isDark: isDark,
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Description
+                              _buildInputField(
+                                controller: _descriptionController,
+                                label: 'Description',
+                                icon: Icons.description_rounded,
+                                maxLines: 3,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Description is required';
+                                  }
+                                  return null;
+                                },
+                                isDark: isDark,
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Services
+                              _buildInputField(
+                                controller: _servicesController,
+                                label: 'Services (comma separated)',
+                                icon: Icons.miscellaneous_services_rounded,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Services are required';
+                                  }
+                                  return null;
+                                },
+                                isDark: isDark,
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Hourly Rate
+                              _buildInputField(
+                                controller: _hourlyRateController,
+                                label: 'Hourly Rate (\$)',
+                                icon: Icons.attach_money_rounded,
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Hourly rate is required';
+                                  }
+                                  if (double.tryParse(value) == null) {
+                                    return 'Please enter a valid number';
+                                  }
+                                  return null;
+                                },
+                                isDark: isDark,
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Phone
+                              _buildInputField(
+                                controller: _phoneController,
+                                label: 'Phone Number',
+                                icon: Icons.phone_rounded,
+                                keyboardType: TextInputType.phone,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Phone number is required';
+                                  }
+                                  return null;
+                                },
+                                isDark: isDark,
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Address
+                              _buildInputField(
+                                controller: _addressController,
+                                label: 'Address',
+                                icon: Icons.location_on_rounded,
+                                maxLines: 2,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Address is required';
+                                  }
+                                  return null;
+                                },
+                                isDark: isDark,
+                              ),
+                              
+                              const SizedBox(height: 40),
+                              
+                              // Save Button
+                              Container(
+                                width: double.infinity,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF007AFF).withOpacity(0.3),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: _isSaving ? null : _saveProfile,
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Center(
+                                      child: _isSaving
+                                          ? const SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Save Changes',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 40),
+                            ],
+                          ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  if (_isEditing) ...[
-                    _buildEditableProfileDetail(
-                        'Full Name', _fullNameController),
-                    _buildEditableProfileDetail(
-                        'Company Name', _companyNameController),
-                    _buildEditableProfileDetail(
-                        'Service Type', _serviceTypeController),
-                    _buildEditableProfileDetail(
-                        'Service Description', _serviceDescriptionController,
-                        keyboardType: TextInputType.multiline),
-                    _buildEditableProfileDetail(
-                        'Hourly Rate', _hourlyRateController,
-                        keyboardType: TextInputType.number, isNumeric: true),
-                    _buildEditableProfileDetail(
-                        'Address', _addressTextController),
-                    _buildEditableProfileDetail('Phone', _phoneController,
-                        keyboardType: TextInputType.phone),
-                    _buildEditableProfileDetail(
-                        'Availability Details', _availabilityDetailsController),
-                    _buildEditableProfileDetail(
-                        'Profile Picture URL', _profilePictureUrlController,
-                        keyboardType: TextInputType.url),
-                  ] else ...[
-                    _buildProfileDetail(
-                        'Full Name', provider.fullName ?? provider.companyName),
-                    _buildProfileDetail(
-                        'Email', provider.email), // Email is not editable here
-                    _buildProfileDetail('Company Name', provider.companyName),
-                    _buildProfileDetail('Service Type', provider.serviceType),
-                    _buildProfileDetail(
-                        'Service Description', provider.serviceDescription),
-                    _buildProfileDetail(
-                        'Address', provider.location?.addressText),
-                    _buildProfileDetail('Phone', provider.contactInfo?.phone),
-                    _buildProfileDetail(
-                        'Hourly Rate', provider.hourlyRate?.toString()),
-                    _buildProfileDetail(
-                        'Availability', provider.availabilityDetails),
-                    _buildProfileDetail('Profile Picture URL',
-                        provider.profilePictureUrl), // Displaying as text
-                    _buildProfileDetail(
-                        'Average Rating', provider.averageRating?.toString()),
-                  ]
-                  // Add more fields as needed
-                ],
-              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String? Function(String?) validator,
+    required bool isDark,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark 
+              ? Colors.black.withOpacity(0.1)
+              : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        style: TextStyle(
+          color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+          fontSize: 16,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: isDark ? Colors.white54 : const Color(0xFF8E8E93),
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: isDark ? Colors.white54 : const Color(0xFF8E8E93),
+            size: 20,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E5EA),
+              width: 1,
             ),
-          );
-        },
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E5EA),
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFF007AFF),
+              width: 2,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFFFF3B30),
+              width: 1,
+            ),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFFFF3B30),
+              width: 2,
+            ),
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+        ),
+        validator: validator,
       ),
     );
   }
