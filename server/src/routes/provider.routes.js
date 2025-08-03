@@ -346,4 +346,7 @@ router.post('/profile-picture', protectRoute, isProvider, upload.single('profile
  */
 router.get('/:id', ProviderController.getProviderById);
 
+// DELETE /api/providers/me - Delete provider account
+router.delete('/me', protectRoute, isProvider, ProviderController.deleteMyAccount);
+
 module.exports = router; 

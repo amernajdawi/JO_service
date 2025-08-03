@@ -17,7 +17,6 @@ const connectDB = async () => {
             // useCreateIndex: true, // Deprecated
             // useFindAndModify: false, // Deprecated
         });
-        console.log('MongoDB Connected successfully!');
     } catch (error) {
         console.error('MongoDB connection error:', error.message);
         // Exit process with failure
@@ -27,13 +26,11 @@ const connectDB = async () => {
 
 // Handle Mongoose connection events (optional, but good for debugging)
 mongoose.connection.on('disconnected', () => {
-    console.log('MongoDB disconnected.');
 });
 
 // If the Node process ends, close the Mongoose connection
 process.on('SIGINT', async () => {
     await mongoose.connection.close();
-    console.log('MongoDB connection disconnected through app termination (SIGINT)');
     process.exit(0);
 });
 

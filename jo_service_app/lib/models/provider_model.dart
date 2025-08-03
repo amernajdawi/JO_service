@@ -7,16 +7,20 @@ class ProviderLocation {
 
   factory ProviderLocation.fromJson(Map<String, dynamic> json) {
     List<double>? coords;
-    if (json['point'] != null && json['point']['coordinates'] is List) {
-      coords = (json['point']['coordinates'] as List).cast<double>();
+    
+    // Backend returns coordinates as direct array
+    if (json['coordinates'] is List) {
+      coords = (json['coordinates'] as List).cast<double>();
     }
 
     // Extract city from the JSON data
     String? cityValue = json['city'] as String?;
+    
+    // Backend returns 'address' field, map it to 'addressText'
+    String? addressText = json['address'] as String? ?? json['addressText'] as String?;
 
     // If city is not provided, try to extract it from addressText
-    if (cityValue == null && json['addressText'] != null) {
-      final addressText = json['addressText'] as String;
+    if (cityValue == null && addressText != null) {
       // Try to extract city from address
       // This is a simple implementation - in a real app, you might need more sophisticated parsing
       final parts = addressText.split(',');
@@ -27,7 +31,7 @@ class ProviderLocation {
     }
 
     return ProviderLocation(
-      addressText: json['addressText'] as String?,
+      addressText: addressText,
       city: cityValue,
       coordinates: coords,
     );
@@ -143,10 +147,13 @@ class Provider {
       location: json['location'] != null
           ? ProviderLocation.fromJson(json['location'] as Map<String, dynamic>)
           : null,
-      contactInfo: json['contactInfo'] != null
-          ? ProviderContactInfo.fromJson(
-              json['contactInfo'] as Map<String, dynamic>)
-          : null,
+      // Backend returns phoneNumber as direct field, not nested in contactInfo
+      contactInfo: json['phoneNumber'] != null
+          ? ProviderContactInfo(phone: json['phoneNumber'] as String?)
+          : (json['contactInfo'] != null
+              ? ProviderContactInfo.fromJson(
+                  json['contactInfo'] as Map<String, dynamic>)
+              : null),
       availabilityDetails: json['availabilityDetails'] as String?,
       profilePictureUrl: json['profilePictureUrl'] as String? ??
           json['profileImage'] as String?, // Fallback

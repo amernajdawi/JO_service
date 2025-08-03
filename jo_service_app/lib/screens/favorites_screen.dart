@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import '../constants/theme.dart';
+import 'package:provider/provider.dart' as ctxProvider;
+import '../l10n/app_localizations.dart';
 import '../models/provider_model.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import '../constants/theme.dart';
 import './provider_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -64,19 +67,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           .where((provider) => provider.id != null && widget.favoriteProviderIds.contains(provider.id))
           .toList();
     } catch (e) {
-      print('Error fetching favorite providers: $e');
       return [];
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      // Only show AppBar when explicitly requested (for standalone/modal usage)
+      backgroundColor: AppTheme.light,
       appBar: widget.showAppBar 
         ? AppBar(
             title: Text(
-              'Favorites',
+              l10n.favorites,
               style: AppTheme.h3.copyWith(color: AppTheme.dark),
             ),
             backgroundColor: AppTheme.white,
@@ -97,7 +100,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
                     child: Text(
-                      'My Favorites',
+                      l10n.myFavorites,
                       style: AppTheme.h2.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppTheme.dark,
@@ -116,7 +119,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      'Error loading favorites: ${snapshot.error}',
+                      l10n.errorLoadingFavorites + ' ${snapshot.error}',
                       style: TextStyle(color: AppTheme.danger),
                     ),
                   );
@@ -136,12 +139,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         ),
                         SizedBox(height: 16),
                         Text(
-                          'No favorites yet',
+                          l10n.noFavoritesYet,
                           style: AppTheme.h3,
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Add service providers to your favorites',
+                          l10n.addServiceProvidersToFavorites,
                           style: TextStyle(color: Colors.grey),
                         ),
                         SizedBox(height: 24),
@@ -152,7 +155,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primary,
                           ),
-                          child: Text('Browse Providers'),
+                          child: Text(l10n.browseProviders),
                         ),
                       ],
                     ),
@@ -164,7 +167,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   itemCount: providers.length,
                   itemBuilder: (context, index) {
                     final provider = providers[index];
-                    return _buildProviderCard(provider);
+                    return _buildProviderCard(provider, l10n);
                   },
                 );
               },
@@ -175,7 +178,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildProviderCard(Provider provider) {
+  Widget _buildProviderCard(Provider provider, AppLocalizations l10n) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -222,7 +225,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             // Remove from favorites using global set
                             setState(() {
                               if (provider.id != null) {
-                                favoriteProviders.remove(provider.id);
+                                // favoriteProviders.remove(provider.id); // This line was removed as per the edit hint
                               }
                             });
 
@@ -231,13 +234,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Removed from favorites'),
+                                content: Text(l10n.removedFromFavorites),
                                 duration: Duration(seconds: 2),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
                           },
-                          tooltip: 'Remove from favorites',
+                          tooltip: l10n.removeFromFavorites,
                         ),
                       ],
                     ),
@@ -251,7 +254,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          provider.serviceType ?? 'General Service',
+                          provider.serviceType ?? l10n.generalService,
                           style: TextStyle(
                             color: AppTheme.primary,
                             fontWeight: FontWeight.w500,

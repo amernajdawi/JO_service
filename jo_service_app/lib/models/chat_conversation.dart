@@ -70,16 +70,12 @@ class ChatConversation {
   // Create from JSON (API response format)
   factory ChatConversation.fromJson(Map<String, dynamic> json) {
     // Extract booking photos
-    print('DEBUG: Parsing ChatConversation from JSON: ${json.keys}');
     
     final bookingData = json['booking'] as Map<String, dynamic>?;
-    print('DEBUG: Booking data: $bookingData');
     
     final photos = bookingData?['photos'] as List?;
-    print('DEBUG: Raw photos from booking: $photos');
     
     final photoUrls = photos?.map((photo) => photo.toString()).toList() ?? [];
-    print('DEBUG: Processed photo URLs: $photoUrls');
 
     return ChatConversation(
       id: json['id'] ?? '',

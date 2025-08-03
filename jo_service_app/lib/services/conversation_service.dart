@@ -9,7 +9,7 @@ class ConversationService {
     if (kIsWeb) {
       return 'http://localhost:3000';
     } else if (Platform.isIOS) {
-      return 'http://10.46.6.119:3000'; // IMPORTANT: Replace with your Mac's local IP
+      return 'http://10.46.6.230:3000'; // Updated to current network IP
     } else {
       return 'http://10.0.2.2:3000';
     }
@@ -29,16 +29,12 @@ class ConversationService {
         },
       );
 
-      print('ConversationService: Response status: ${response.statusCode}');
-      print('ConversationService: Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final conversationsData = data['conversations'] as List;
         
-        print('DEBUG: Raw conversations data from backend:');
         for (var conv in conversationsData) {
-          print('DEBUG: Conversation: ${conv['id']}, booking: ${conv['booking']}, photos: ${conv['booking']?['photos']}');
         }
         
         return conversationsData
@@ -51,7 +47,6 @@ class ConversationService {
         throw Exception(errorData['message'] ?? 'Failed to load conversations');
       }
     } catch (e) {
-      print('ConversationService Error: $e');
       if (e.toString().contains('SocketException') || 
           e.toString().contains('Connection refused')) {
         throw Exception('Unable to connect to server. Please check your connection.');
@@ -66,7 +61,6 @@ class ConversationService {
     required String conversationId,
   }) async {
     // TODO: Implement when backend endpoint is available
-    print('ConversationService: markAsRead called for conversation $conversationId');
   }
 
   // Delete conversation (for future implementation)
@@ -75,6 +69,5 @@ class ConversationService {
     required String conversationId,
   }) async {
     // TODO: Implement when backend endpoint is available
-    print('ConversationService: deleteConversation called for conversation $conversationId');
   }
 }

@@ -14,6 +14,9 @@ import '../services/location_service.dart';
 import '../widgets/provider_info_card.dart';
 */
 
+import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
+
 // Temporarily disabled due to missing dependencies
 class MapViewScreen extends StatefulWidget {
   static const routeName = '/map-view';
@@ -161,10 +164,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Map View'),
+        title: Text(AppLocalizations.of(context)!.mapView),
       ),
-      body: const Center(
-        child: Text('Map functionality temporarily disabled'),
+      body: Center(
+        child: Text(AppLocalizations.of(context)!.mapFunctionalityDisabled),
       ),
     );
   }

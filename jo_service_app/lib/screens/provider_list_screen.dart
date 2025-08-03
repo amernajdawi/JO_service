@@ -7,7 +7,8 @@ import '../constants/theme.dart';
 import './provider_signup_screen.dart';
 import './role_selection_screen.dart';
 import './provider_detail_screen.dart';
-import './favorites_screen.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/service_type_localizer.dart';
 import 'dart:convert';
 
 class ProviderListScreen extends StatefulWidget {
@@ -35,36 +36,46 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
   String _selectedCategory = 'All';
   String _selectedLocation = '';
 
-  final List<Map<String, dynamic>> _categories = [
-    {
-      'name': 'All',
-      'icon': Icons.grid_view_rounded,
-    },
-    {
-      'name': 'Plumbing',
-      'icon': Icons.plumbing,
-    },
-    {
-      'name': 'Electrical',
-      'icon': Icons.electrical_services,
-    },
-    {
-      'name': 'Cleaning',
-      'icon': Icons.cleaning_services,
-    },
-    {
-      'name': 'Gardening',
-      'icon': Icons.yard,
-    },
-    {
-      'name': 'Painting',
-      'icon': Icons.format_paint,
-    },
-    {
-      'name': 'Carpentry',
-      'icon': Icons.handyman,
-    },
-  ];
+  List<Map<String, dynamic>> _getCategories(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      {
+        'name': 'All',
+        'displayName': l10n.all,
+        'icon': Icons.grid_view_rounded,
+      },
+      {
+        'name': 'Plumbing',
+        'displayName': l10n.plumbing,
+        'icon': Icons.plumbing,
+      },
+      {
+        'name': 'Electrical',
+        'displayName': l10n.electrical,
+        'icon': Icons.electrical_services,
+      },
+      {
+        'name': 'Cleaning',
+        'displayName': l10n.cleaning,
+        'icon': Icons.cleaning_services,
+      },
+      {
+        'name': 'Gardening',
+        'displayName': l10n.gardening,
+        'icon': Icons.yard,
+      },
+      {
+        'name': 'Painting',
+        'displayName': l10n.painting,
+        'icon': Icons.format_paint,
+      },
+      {
+        'name': 'Carpentry',
+        'displayName': l10n.carpentry,
+        'icon': Icons.handyman,
+      },
+    ];
+  }
 
   @override
   void initState() {
@@ -111,7 +122,26 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
 
     // Add category filter if not "All"
     if (_selectedCategory != 'All') {
-      queryParams['category'] = _selectedCategory;
+      // Map category names to match backend expectations
+      String categoryParam = _selectedCategory;
+      switch (_selectedCategory) {
+        case 'Electrical':
+          categoryParam = 'Electrician';
+          break;
+        case 'Plumbing':
+          categoryParam = 'Plumber';
+          break;
+        case 'Cleaning':
+          categoryParam = 'Cleaner';
+          break;
+        case 'Gardening':
+          categoryParam = 'Gardener';
+          break;
+        case 'Painting':
+          categoryParam = 'Painter';
+          break;
+      }
+      queryParams['serviceType'] = categoryParam;
     }
 
     // Add location filter if specified
@@ -142,8 +172,6 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
 
         // If we filtered out any providers, return our filtered list
         if (filteredProviders.length != response.providers.length) {
-          print(
-              'Client-side filtering applied: ${filteredProviders.length} of ${response.providers.length} providers match "$searchTerm"');
           return ProviderListResponse(
             providers: filteredProviders,
             currentPage: response.currentPage,
@@ -172,7 +200,6 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                   List<String>.from(provider.toJson()['serviceAreas']);
             }
           } catch (e) {
-            print('Error parsing service areas: $e');
           }
 
           // Check if the provider operates in the selected location
@@ -187,8 +214,6 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
         }).toList();
 
         if (filteredByLocation.length != response.providers.length) {
-          print(
-              'Location filtering applied: ${filteredByLocation.length} of ${response.providers.length} providers in $_selectedLocation');
           return ProviderListResponse(
             providers: filteredByLocation,
             currentPage: response.currentPage,
@@ -262,7 +287,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
           String categoryName = trimmedQuery.substring('Category: '.length);
           // Find if this category exists in our list
           bool validCategory =
-              _categories.any((cat) => cat['name'] == categoryName);
+              _getCategories(context).any((cat) => cat['name'] == categoryName);
           if (validCategory) {
             _selectedCategory = categoryName;
           }
@@ -357,17 +382,6 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
     );
   }
 
-  // Toggle favorite status for a provider
-  void _toggleFavorite(String providerId) {
-    setState(() {
-      if (favoriteProviders.contains(providerId)) {
-        favoriteProviders.remove(providerId);
-      } else {
-        favoriteProviders.add(providerId);
-      }
-    });
-    print('Favorites count: ${favoriteProviders.length}');
-  }
 
   // Add this method to handle location selection
   void _selectLocation(String location) {
@@ -462,55 +476,32 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Text(
           _selectedLocation.isNotEmpty
-              ? 'Providers in $_selectedLocation'
+              ? AppLocalizations.of(context)!.providersIn(_selectedLocation)
               : _searchQuery.isNotEmpty && !_searchQuery.startsWith('Category:')
-                  ? 'Results for "${_searchQuery}"'
-                  : 'Service Providers',
+                  ? AppLocalizations.of(context)!.resultsFor(_searchQuery)
+                  : AppLocalizations.of(context)!.serviceProviders,
           style: AppTheme.h3.copyWith(color: AppTheme.dark),
           overflow: TextOverflow.ellipsis,
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppTheme.dark),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
-          if (favoriteProviders.isNotEmpty)
-            IconButton(
-              icon: Icon(Icons.favorite, color: Colors.red),
-              tooltip: 'View Favorites',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => FavoritesScreen(
-                      favoriteProviderIds: favoriteProviders,
-                    ),
-                  ),
-                );
-              },
-            ),
           if (_searchQuery.isNotEmpty || _selectedCategory != 'All')
             IconButton(
               icon: Icon(Icons.filter_alt_off, color: AppTheme.primary),
-              tooltip: 'Clear Filters',
+              tooltip: AppLocalizations.of(context)!.clearFilters,
               onPressed: _clearFilters,
             ),
           IconButton(
             icon: Icon(Icons.refresh, color: AppTheme.dark),
-            tooltip: 'Refresh List',
+            tooltip: AppLocalizations.of(context)!.refreshList,
             onPressed: () => _loadProviders(resetPage: true),
-          ),
-          // Add a debug button for sample data creation (remove in production)
-          IconButton(
-            icon: Icon(Icons.bug_report, color: AppTheme.dark),
-            tooltip: 'Create Sample Data',
-            onPressed: _createSampleData,
           ),
           if (_selectedLocation.isNotEmpty)
             IconButton(
               icon: Icon(Icons.location_on, color: AppTheme.primary),
-              tooltip: 'City: $_selectedLocation',
+              tooltip: AppLocalizations.of(context)!.cityLabel(_selectedLocation),
               onPressed: () {
                 // Show location selection dialog
                 _showLocationSelectionDialog();
@@ -534,7 +525,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        'Error loading providers: ${snapshot.error}.\nMake sure your backend server is running and accessible.',
+                        AppLocalizations.of(context)!.errorLoadingProvidersMessage(snapshot.error.toString()),
                         textAlign: TextAlign.center,
                         style: AppTheme.body3.copyWith(color: AppTheme.danger),
                       ),
@@ -549,7 +540,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                         Icon(Icons.search_off, size: 64, color: AppTheme.grey),
                         const SizedBox(height: 16),
                         Text(
-                          'No providers found',
+                          AppLocalizations.of(context)!.noProvidersFound,
                           style: AppTheme.h3.copyWith(color: AppTheme.dark),
                         ),
                         const SizedBox(height: 8),
@@ -622,7 +613,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search by name or service type...',
+                hintText: AppLocalizations.of(context)!.searchByNameOrServiceType,
                 hintStyle: TextStyle(color: AppTheme.grey),
                 prefixIcon: Icon(Icons.search, color: AppTheme.grey),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -670,7 +661,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                           size: 16, color: AppTheme.primary),
                       const SizedBox(width: 4),
                       Text(
-                        'City: $_selectedLocation',
+                        AppLocalizations.of(context)!.cityLabel(_selectedLocation),
                         style: TextStyle(color: AppTheme.primary),
                       ),
                       const SizedBox(width: 4),
@@ -686,6 +677,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
   }
 
   Widget _buildCategoryFilter() {
+    final categories = _getCategories(context);
     return Container(
       height: 80,
       color: AppTheme.white,
@@ -693,9 +685,9 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _categories.length,
+        itemCount: categories.length,
         itemBuilder: (context, index) {
-          final category = _categories[index];
+          final category = categories[index];
           final isSelected = _selectedCategory == category['name'];
 
           return GestureDetector(
@@ -726,7 +718,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    category['name'],
+                    category['displayName'] ?? category['name'],
                     style: TextStyle(
                       color: isSelected ? AppTheme.primary : AppTheme.grey,
                       fontWeight:
@@ -746,8 +738,6 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
   }
 
   Widget _buildProviderCard(Provider provider) {
-    final isFavorite = provider.id != null && favoriteProviders.contains(provider.id);
-
     // Determine provider location info
     String? providerCity = provider.location?.city;
     String? addressText = provider.location?.addressText;
@@ -799,39 +789,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        IconButton(
-                          icon: Icon(
-                            isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: isFavorite ? Colors.red : AppTheme.grey,
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            if (provider.id != null) {
-                              _toggleFavorite(provider.id!);
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isFavorite
-                                    ? 'Removed from favorites'
-                                    : 'Added to favorites'),
-                                duration: Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          tooltip: isFavorite
-                              ? 'Remove from favorites'
-                              : 'Add to favorites',
-                          padding: EdgeInsets.all(4),
-                          constraints: BoxConstraints(
-                            minWidth: 28,
-                            minHeight: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -864,7 +822,7 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            provider.serviceType ?? 'General Services',
+                            ServiceTypeLocalizer.getLocalizedServiceType(provider.serviceType, AppLocalizations.of(context)!),
                             style: TextStyle(color: AppTheme.grey),
                             overflow: TextOverflow.ellipsis,
                           ),

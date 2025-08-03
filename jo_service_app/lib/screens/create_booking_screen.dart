@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../l10n/app_localizations.dart';
 import '../models/provider_model.dart' as provider_model;
 import '../models/booking_model.dart';
 import '../services/auth_service.dart';
@@ -206,12 +207,6 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         return;
       }
 
-      print('Creating booking with provider: ${widget.serviceProvider.id ?? 'unknown'}');
-      print('Token: $token');
-      print('Date/Time: ${_getCombinedDateTime()}');
-      print('Location: ${_locationController.text}');
-      print('Notes: ${_notesController.text}');
-      print('Photos: ${_selectedImages.length}');
 
       // Prepare photo paths
       final List<String> photoPaths = _selectedImages.map((file) => file.path).toList();
@@ -225,13 +220,10 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         photoPaths: photoPaths,
       );
 
-      print('Booking created successfully with ID: ${booking.id}');
 
       // Images will be automatically available in chat through the booking system
       if (photoPaths.isNotEmpty) {
-        print('DEBUG: Booking created with ${photoPaths.length} images - they will appear in chat');
       } else {
-        print('DEBUG: No photos in this booking');
       }
 
       if (mounted) {
@@ -249,7 +241,6 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         Navigator.of(context).pop(booking);
       }
     } catch (e) {
-      print('Error in _submitBooking method: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -265,7 +256,6 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
   // Method to send booking images to chat automatically
   Future<void> _sendBookingImagesToChat(String token, Booking booking, List<String> photoPaths) async {
     try {
-      print('Sending ${photoPaths.length} booking images to chat...');
       
       // Create a message that indicates booking images were shared
       final message = _notesController.text.isNotEmpty 
@@ -299,30 +289,25 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         }
       }
       
-      print('Sending ${request.files.length} images to chat endpoint: $uri');
       
       // Send the request
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       
-      print('Chat images response status: ${response.statusCode}');
-      print('Chat images response body: ${response.body}');
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Successfully sent booking images to chat');
       } else {
-        print('Failed to send images to chat: ${response.statusCode} - ${response.body}');
         // Don't throw error - this is not critical to booking creation
       }
       
     } catch (e) {
-      print('Error sending booking images to chat: $e');
       // Don't throw error - this is not critical to booking creation
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final formattedDate =
         DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate);
     final formattedTime = _selectedTime.format(context);
@@ -330,6 +315,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Book a Service'),
+        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -368,7 +354,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                                     children: [
                                       Text(
                                         widget.serviceProvider.fullName ??
-                                            'Unknown Provider',
+                                            l10n.unknownProvider,
                                         style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -377,14 +363,14 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                                       const SizedBox(height: 4),
                                       Text(
                                         widget.serviceProvider.serviceType ??
-                                            'Unknown Service',
+                                            l10n.unknownService,
                                         style:
                                             TextStyle(color: Colors.grey[700]),
                                       ),
                                       if (widget.serviceProvider.hourlyRate !=
                                           null)
                                         Text(
-                                          'Rate: \$${widget.serviceProvider.hourlyRate}/hr',
+                                          '${l10n.rate}: \$${widget.serviceProvider.hourlyRate}/${l10n.hour}',
                                           style: TextStyle(
                                             color:
                                                 Theme.of(context).primaryColor,

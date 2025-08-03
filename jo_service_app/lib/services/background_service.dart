@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,14 +23,12 @@ void callbackDispatcher() {
 Future<bool> _performDataSync() async {
   try {
     // Add your data sync logic here
-    print("Background: Performing data sync");
     
     // Example: sync user bookings, provider updates, etc.
     // You can make API calls here to sync data
     
     return true;
   } catch (e) {
-    print("Background sync error: $e");
     return false;
   }
 }
@@ -36,7 +36,6 @@ Future<bool> _performDataSync() async {
 // Background task to check for booking updates
 Future<bool> _checkBookingUpdates() async {
   try {
-    print("Background: Checking booking updates");
     
     // Get stored auth token
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -55,7 +54,6 @@ Future<bool> _checkBookingUpdates() async {
     
     return true;
   } catch (e) {
-    print("Background booking check error: $e");
     return false;
   }
 }
@@ -99,25 +97,58 @@ class BackgroundService {
 
   // Start background tasks
   static Future<void> startBackgroundTasks() async {
-    // Register periodic task for data sync (runs every 15 minutes)
-    await Workmanager().registerPeriodicTask(
-      "dataSync",
-      "syncData",
-      frequency: const Duration(minutes: 15),
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
-    );
+    try {
+      // Check if running on supported platform
+      if (!Platform.isAndroid && !Platform.isIOS) {
+        if (kDebugMode) {
+        }
+        return;
+      }
 
-    // Register periodic task for booking updates (runs every 30 minutes)
-    await Workmanager().registerPeriodicTask(
-      "bookingUpdates",
-      "checkBookingUpdates",
-      frequency: const Duration(minutes: 30),
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
-    );
+      // For iOS, periodic tasks have limitations
+      if (Platform.isIOS) {
+        if (kDebugMode) {
+        }
+        // iOS doesn't support true periodic background tasks like Android
+        // You might want to use push notifications or background app refresh instead
+        return;
+      }
+
+      // Register periodic task for data sync (runs every 15 minutes) - Android only
+      if (Platform.isAndroid) {
+        await Workmanager().registerPeriodicTask(
+          "dataSync",
+          "syncData",
+          frequency: const Duration(minutes: 15),
+          constraints: Constraints(
+            networkType: NetworkType.connected,
+          ),
+        );
+
+        // Register periodic task for booking updates (runs every 30 minutes)
+        await Workmanager().registerPeriodicTask(
+          "bookingUpdates",
+          "checkBookingUpdates",
+          frequency: const Duration(minutes: 30),
+          constraints: Constraints(
+            networkType: NetworkType.connected,
+          ),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+      }
+      // Fallback: Use alternative approach like push notifications
+      _handleBackgroundTaskError(e);
+    }
+  }
+
+  // Handle background task registration errors
+  static void _handleBackgroundTaskError(dynamic error) {
+    if (kDebugMode) {
+    }
+    // You could implement alternative notification strategies here
+    // such as using Firebase Cloud Messaging for push notifications
   }
 
   // Stop all background tasks

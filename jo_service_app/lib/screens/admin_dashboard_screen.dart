@@ -201,6 +201,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         actions: [
           IconButton(
             icon: Icon(
+              Icons.book_online,
+              color: isDark ? Colors.white : const Color(0xFF000000),
+            ),
+            onPressed: () {
+              // Navigate to booking management screen
+              Navigator.of(context).pushNamed('/admin-bookings');
+            },
+            tooltip: 'Booking Management',
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.add,
+              color: isDark ? Colors.white : const Color(0xFF000000),
+            ),
+            onPressed: () {
+              // Navigate to create provider screen
+              Navigator.of(context).pushNamed('/admin/create-provider').then((_) {
+                // Refresh providers list after creating
+                _loadProviders();
+              });
+            },
+            tooltip: 'Create Provider',
+          ),
+          IconButton(
+            icon: Icon(
               Icons.refresh,
               color: isDark ? Colors.white : const Color(0xFF000000),
             ),

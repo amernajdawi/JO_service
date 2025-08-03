@@ -8,8 +8,6 @@ const NotificationController = {
             const userType = req.auth.type === 'user' ? 'User' : 'Provider';
             const { page = 1, limit = 20, unreadOnly = false } = req.query;
             
-            console.log(`Getting notifications for ${userType} ${userId}`);
-            console.log('Query:', { page, limit, unreadOnly });
             
             const result = await NotificationService.getUserNotifications(
                 userId,
@@ -34,7 +32,6 @@ const NotificationController = {
             const notificationId = req.params.id;
             const userId = req.auth.id;
             
-            console.log(`Marking notification ${notificationId} as read for user ${userId}`);
             
             const updatedNotification = await NotificationService.markAsRead(notificationId);
             
@@ -60,7 +57,6 @@ const NotificationController = {
             const userId = req.auth.id;
             const userType = req.auth.type === 'user' ? 'User' : 'Provider';
             
-            console.log(`Marking all notifications as read for ${userType} ${userId}`);
             
             const result = await NotificationService.markAllAsRead(userId, userType);
             
@@ -80,7 +76,6 @@ const NotificationController = {
             const userId = req.auth.id;
             const userType = req.auth.type === 'user' ? 'User' : 'Provider';
             
-            console.log(`Getting unread notification count for ${userType} ${userId}`);
             
             const result = await NotificationService.getUserNotifications(
                 userId,

@@ -711,7 +711,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Booking #${booking.id.substring(0, 8)}',
+                            booking.user?.fullName ?? 'Booking #${booking.id.substring(0, 8)}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

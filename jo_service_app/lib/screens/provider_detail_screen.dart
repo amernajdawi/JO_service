@@ -4,12 +4,10 @@ import '../models/provider_model.dart';
 import '../models/chat_conversation.dart';
 import 'package:provider/provider.dart' as ctx; // Alias for provider package
 import '../services/auth_service.dart'; // To get token for API calls
-import './create_booking_screen.dart'; // For booking navigation
-import './favorites_screen.dart'; // For favorites screen
 import './chat_screen.dart'; // For chat navigation
-
-// Global set to track favorites across the app
-final Set<String> favoriteProviders = {};
+import './create_booking_screen.dart'; // For booking navigation
+import '../l10n/app_localizations.dart';
+import '../utils/service_type_localizer.dart';
 
 class ProviderDetailScreen extends StatefulWidget {
   static const routeName = '/provider-detail';
@@ -25,50 +23,18 @@ class ProviderDetailScreen extends StatefulWidget {
 class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   final ApiService _apiService = ApiService();
   Future<Provider?>? _providerFuture; // Nullable as provider might not be found
-
-  // Check if the current provider is in favorites
-  bool get isFavorite => favoriteProviders.contains(widget.providerId);
+  late AuthService _authService;
 
   @override
   void initState() {
     super.initState();
+    _authService = ctx.Provider.of<AuthService>(context, listen: false);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fetchProviderDetails();
       }
     });
-  }
-
-  // Toggle favorite status of the provider
-  void _toggleFavorite() {
-    setState(() {
-      if (isFavorite) {
-        favoriteProviders.remove(widget.providerId);
-      } else {
-        favoriteProviders.add(widget.providerId);
-      }
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text(isFavorite ? 'Added to favorites' : 'Removed from favorites'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'View Favorites',
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => FavoritesScreen(
-                  favoriteProviderIds: favoriteProviders,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
   }
 
   Future<void> _fetchProviderDetails() async {
@@ -96,17 +62,8 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Provider Profile'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : null,
-            ),
-            onPressed: _toggleFavorite,
-            tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
-          ),
-        ],
+        title: Text(AppLocalizations.of(context)!.providerDetails),
+        automaticallyImplyLeading: false,
       ),
       body: FutureBuilder<Provider?>(
         future: _providerFuture,
@@ -125,13 +82,13 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                   const SizedBox(height: 10),
                   ElevatedButton(
                       onPressed: _fetchProviderDetails,
-                      child: const Text('Try Again'))
+                      child: Text(AppLocalizations.of(context)!.retry))
                 ],
               ),
             ));
           }
           if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('Provider not found.'));
+            return Center(child: Text(AppLocalizations.of(context)!.unknownProvider));
           }
 
           final provider = snapshot.data!;
@@ -142,61 +99,28 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Center(
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primaryContainer,
-                        backgroundImage: provider.profilePictureUrl != null &&
-                                provider.profilePictureUrl!.isNotEmpty &&
-                                provider.profilePictureUrl!.startsWith('http')
-                            ? NetworkImage(provider.profilePictureUrl!)
-                            : const AssetImage('assets/default_user.png') as ImageProvider,
-                        child: (provider.profilePictureUrl == null ||
-                                provider.profilePictureUrl!.isEmpty)
-                            ? Text(
-                                provider.fullName?.isNotEmpty == true
-                                    ? provider.fullName![0].toUpperCase()
-                                    : 'P',
-                                style: TextStyle(
-                                    fontSize: 40,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontWeight: FontWeight.bold))
-                            : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                spreadRadius: 1,
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: InkWell(
-                            onTap: _toggleFavorite,
-                            child: Icon(
-                              isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: isFavorite ? Colors.red : Colors.grey,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    backgroundImage: provider.profilePictureUrl != null &&
+                            provider.profilePictureUrl!.isNotEmpty &&
+                            provider.profilePictureUrl!.startsWith('http')
+                        ? NetworkImage(provider.profilePictureUrl!)
+                        : const AssetImage('assets/default_user.png') as ImageProvider,
+                    child: (provider.profilePictureUrl == null ||
+                            provider.profilePictureUrl!.isEmpty)
+                        ? Text(
+                            provider.fullName?.isNotEmpty == true
+                                ? provider.fullName![0].toUpperCase()
+                                : 'P',
+                            style: TextStyle(
+                                fontSize: 40,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                                fontWeight: FontWeight.bold))
+                        : null,
                   ),
                 ),
                 const SizedBox(height: 16.0),
@@ -214,7 +138,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                     provider.serviceType!.isNotEmpty)
                   Center(
                     child: Text(
-                      provider.serviceType!,
+                      ServiceTypeLocalizer.getLocalizedServiceType(provider.serviceType, AppLocalizations.of(context)!),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Theme.of(context).colorScheme.secondary),
                       textAlign: TextAlign.center,
@@ -226,89 +150,70 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                 const Divider(),
                 const SizedBox(height: 10.0),
 
-                _buildSectionTitle(context, 'Service Details'),
-                _buildDetailRow(context, Icons.work_outline, 'Description',
-                    provider.serviceDescription ?? 'No description provided.'),
+                _buildSectionTitle(context, AppLocalizations.of(context)!.serviceDetails),
+                _buildDetailRow(context, Icons.work_outline, AppLocalizations.of(context)!.description,
+                    provider.serviceDescription ?? AppLocalizations.of(context)!.noDescriptionProvided),
                 if (provider.hourlyRate != null)
-                  _buildDetailRow(context, Icons.attach_money, 'Hourly Rate',
-                      '\$${provider.hourlyRate!.toStringAsFixed(2)}/hr'),
+                  _buildDetailRow(context, Icons.attach_money, AppLocalizations.of(context)!.hourlyRate,
+                      '\$${provider.hourlyRate!.toStringAsFixed(2)}/${AppLocalizations.of(context)!.hour}'),
                 const SizedBox(height: 10.0),
                 const Divider(),
                 const SizedBox(height: 10.0),
 
-                _buildSectionTitle(context, 'Location & Contact'),
-                _buildDetailRow(context, Icons.location_on_outlined, 'Address',
-                    provider.location?.addressText ?? 'Not specified'),
+                _buildSectionTitle(context, AppLocalizations.of(context)!.locationAndContact),
+                _buildDetailRow(context, Icons.location_on_outlined, AppLocalizations.of(context)!.address,
+                    provider.location?.addressText ?? AppLocalizations.of(context)!.notSpecified),
                 // TODO: Display map if coordinates are available
                 // if (provider.location?.coordinates != null && provider.location!.coordinates!.length == 2) ...
 
-                _buildDetailRow(context, Icons.phone_outlined, 'Phone',
-                    provider.contactInfo?.phone ?? 'Not specified'),
+                _buildDetailRow(context, Icons.phone_outlined, AppLocalizations.of(context)!.phone,
+                    provider.contactInfo?.phone ?? AppLocalizations.of(context)!.notSpecified),
                 _buildDetailRow(context, Icons.alternate_email_outlined,
-                    'Email', provider.email ?? 'Not specified'),
+                    AppLocalizations.of(context)!.email, provider.email ?? AppLocalizations.of(context)!.notSpecified),
                 const SizedBox(height: 10.0),
                 const Divider(),
                 const SizedBox(height: 10.0),
 
-                _buildSectionTitle(context, 'Availability'),
+                _buildSectionTitle(context, AppLocalizations.of(context)!.availability),
                 _buildDetailRow(
                     context,
                     Icons.access_time_outlined,
-                    'Availability',
-                    provider.availabilityDetails ?? 'Not specified'),
+                    AppLocalizations.of(context)!.availability,
+                    provider.availabilityDetails ?? AppLocalizations.of(context)!.notSpecified),
                 const SizedBox(height: 24.0),
 
                 Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.calendar_today_outlined),
-                        label: const Text('Book Service'),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            foregroundColor:
-                                Theme.of(context).colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 15),
-                            textStyle: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold)),
-                        onPressed: () {
-                          // Navigate to CreateBookingScreen
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => CreateBookingScreen(
-                                serviceProvider: provider,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      OutlinedButton.icon(
-                        icon: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorite ? Colors.red : null,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    label: Text(AppLocalizations.of(context)!.bookService),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 15),
+                        textStyle: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      // Navigate to CreateBookingScreen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => CreateBookingScreen(
+                            serviceProvider: provider,
+                          ),
                         ),
-                        label:
-                            Text(isFavorite ? 'Favorited' : 'Add to Favorites'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 15),
-                        ),
-                        onPressed: _toggleFavorite,
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 10.0),
                 Center(
                   child: TextButton.icon(
                     icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text('Chat with Provider'),
+                    label: Text(AppLocalizations.of(context)!.chatWith(provider.fullName ?? AppLocalizations.of(context)!.provider)),
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -328,25 +233,6 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                     },
                   ),
                 ),
-                if (favoriteProviders.isNotEmpty)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: TextButton.icon(
-                        icon: const Icon(Icons.favorite),
-                        label: const Text('View All Favorites'),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => FavoritesScreen(
-                                favoriteProviderIds: favoriteProviders,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
                 // TODO: Display Reviews Section
               ],
             ),
@@ -411,7 +297,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           Text(
-            '(${provider.totalRatings} ratings)',
+            '(${provider.totalRatings} ${AppLocalizations.of(context)!.ratingsText})',
             style: Theme.of(context)
                 .textTheme
                 .titleSmall
@@ -419,7 +305,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
           ),
         ] else
           Text(
-            'No ratings yet',
+            AppLocalizations.of(context)!.noRatingsYet,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontStyle: FontStyle.italic, color: Colors.grey[600]),
           ),

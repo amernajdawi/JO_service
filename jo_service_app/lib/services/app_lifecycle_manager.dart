@@ -53,19 +53,28 @@ class AppLifecycleManager extends WidgetsBindingObserver {
   }
   
   void _onAppResumed() {
-    print("App resumed - checking for updates");
     _checkForUpdatesWhenResumed();
   }
   
   void _onAppPaused() {
-    print("App paused - starting background tasks");
-    BackgroundService.saveAppState();
-    BackgroundService.startBackgroundTasks();
+    _handleBackgroundServiceCall(() async {
+      await BackgroundService.saveAppState();
+      await BackgroundService.startBackgroundTasks();
+    });
   }
   
   void _onAppDetached() {
-    print("App detached - cleaning up");
-    BackgroundService.saveAppState();
+    _handleBackgroundServiceCall(() async {
+      await BackgroundService.saveAppState();
+    });
+  }
+  
+  // Helper method to safely handle background service calls
+  void _handleBackgroundServiceCall(Future<void> Function() serviceCall) {
+    serviceCall().catchError((error) {
+      // Continue execution even if background service fails
+      return;
+    });
   }
   
   Future<void> _checkForUpdatesWhenResumed() async {
@@ -96,7 +105,6 @@ class AppLifecycleManager extends WidgetsBindingObserver {
         await BackgroundService.saveAppState();
       }
     } catch (e) {
-      print("Error checking updates on resume: $e");
     }
   }
 }

@@ -163,7 +163,7 @@ router.post('/user/login', AuthController.loginUser);
  *       500:
  *         description: Server error
  */
-router.post('/provider/register', AuthController.registerProvider);
+// router.post('/provider/register', authController.registerProvider); // Disabled: Only admin can create providers
 
 /**
  * @swagger

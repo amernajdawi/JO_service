@@ -110,6 +110,48 @@ const UserController = {
             console.error('Error uploading profile picture:', error);
             res.status(500).json({ message: 'Failed to upload profile picture', error: error.message });
         }
+    },
+
+    // DELETE /api/users/me - Delete authenticated user's account
+    async deleteMyAccount(req, res) {
+        const userId = req.auth.id;
+        
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID not found in authentication token.' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID format.' });
+        }
+
+        try {
+            // Find the user first to make sure they exist
+            const user = await User.findById(userId);
+            
+            if (!user) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+            // Delete the user account
+            await User.findByIdAndDelete(userId);
+            
+            // TODO: In a production environment, you might want to:
+            // 1. Delete related data (bookings, messages, etc.)
+            // 2. Send confirmation email
+            // 3. Log the deletion for audit purposes
+            // 4. Handle file cleanup (profile pictures, etc.)
+            
+            res.status(200).json({ 
+                message: 'Account deleted successfully',
+                success: true 
+            });
+        } catch (error) {
+            console.error('Error deleting user account:', error);
+            res.status(500).json({ 
+                message: 'Failed to delete account', 
+                error: error.message 
+            });
+        }
     }
 };
 

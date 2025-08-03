@@ -11,7 +11,6 @@ function initializeWebSocket(server) {
     const wss = new WebSocket.Server({ server });
 
     wss.on('connection', async (ws, req) => {
-        console.log('WebSocket Client Attempting Connection...');
         
         const parameters = url.parse(req.url, true).query;
         const token = parameters.token;
@@ -19,9 +18,7 @@ function initializeWebSocket(server) {
 
         if (token) {
             try {
-                console.log('Verifying token:', token); // Log the token being verified
                 authInfo = verifyToken(token);
-                console.log('Token verification result (authInfo):', authInfo); // Log the result
             } catch (err) {
                 console.error('WebSocket Auth Error: Exception during verifyToken:', err.message);
                 ws.send(JSON.stringify({ type: 'error', message: 'Authentication error: ' + err.message }));
@@ -41,7 +38,6 @@ function initializeWebSocket(server) {
 
         const clientId = authInfo.id; // User or Provider ID from token
         const clientType = authInfo.type; // 'user' or 'provider' (lowercase from token)
-        console.log(`WebSocket Client Authenticated: ID=${clientId}, Type=${clientType}`);
 
         // 2. Store the authenticated client connection
         clients.set(clientId, ws);
@@ -54,7 +50,6 @@ function initializeWebSocket(server) {
             let messageData;
             try {
                 messageData = JSON.parse(messageBuffer.toString());
-                console.log('Received message:', messageData);
 
                 // Basic validation
                 if (!messageData.recipientId || !messageData.text) {
@@ -88,7 +83,6 @@ function initializeWebSocket(server) {
                 // Save message to DB *before* sending to recipient for reliability
                 try {
                     await newMessage.save();
-                    console.log('Message saved to DB');
                 } catch (dbError) {
                     console.error('Failed to save message to DB:', dbError);
                     // Decide if we should still try to send or notify sender of DB error
@@ -110,11 +104,8 @@ function initializeWebSocket(server) {
                 const recipientWs = clients.get(messageData.recipientId);
                 if (recipientWs && recipientWs.readyState === ws.OPEN) {
                     recipientWs.send(JSON.stringify({ type: 'message', data: outgoingMessage }));
-                    console.log(`Message sent from ${clientId} to ${messageData.recipientId}`);
                 } else {
-                    console.log(`Recipient ${messageData.recipientId} is not online.`);
                     // Log current connected client IDs for debugging
-                    console.log(`Currently connected client IDs: ${JSON.stringify(Array.from(clients.keys()))}`);
                     // TODO: Handle offline messaging (e.g., store in DB, send push notification)
                     ws.send(JSON.stringify({ type: 'error', message: `User ${messageData.recipientId} is not online.` }));
                 }
@@ -127,7 +118,6 @@ function initializeWebSocket(server) {
 
         // 5. Handle client disconnection
         ws.on('close', () => {
-            console.log(`WebSocket Client Disconnected: ID=${ws.clientId}`);
             if (ws.clientId) {
                 clients.delete(ws.clientId);
             }
@@ -142,7 +132,6 @@ function initializeWebSocket(server) {
         });
     });
 
-    console.log('WebSocket server initialized');
 }
 
 module.exports = { initializeWebSocket }; 

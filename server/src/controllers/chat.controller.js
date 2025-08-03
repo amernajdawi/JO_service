@@ -176,7 +176,6 @@ const ChatController = {
 
                     // Skip this conversation if participant not found
                     if (!participant) {
-                        console.log(`Warning: Participant not found for conversation ${conv._id}, otherUserId: ${otherUserId}, otherUserType: ${otherUserType}`);
                         return null;
                     }
 
@@ -263,9 +262,7 @@ const ChatController = {
             
             transformedConversations.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
 
-            console.log(`DEBUG: Returning ${transformedConversations.length} conversations`);
             transformedConversations.forEach(conv => {
-                console.log(`DEBUG: Conversation ${conv.participantName}: ${conv.booking?.photos?.length || 0} total booking photos`);
             });
 
             res.status(200).json({ conversations: transformedConversations });
@@ -294,7 +291,6 @@ const ChatController = {
                 }
             );
 
-            console.log(`Marked ${result.modifiedCount} messages as read in conversation ${conversationId}`);
 
             res.status(200).json({
                 message: 'Messages marked as read',
@@ -332,7 +328,6 @@ const ChatController = {
             // If the message has images, we could optionally delete the image files from disk
             // For now, we'll just delete the message record
             if (message.images && message.images.length > 0) {
-                console.log(`Deleting message with ${message.images.length} images: ${message.images}`);
                 // TODO: Optionally delete image files from disk
                 // const fs = require('fs');
                 // const path = require('path');
@@ -347,7 +342,6 @@ const ChatController = {
             // Delete the message
             await Message.findByIdAndDelete(messageId);
 
-            console.log(`Message ${messageId} deleted by user ${currentUserId}`);
 
             res.status(200).json({ 
                 message: 'Message deleted successfully',
@@ -384,7 +378,6 @@ const ChatController = {
                 conversationId: conversationId
             });
 
-            console.log(`Deleted ${result.deletedCount} messages from conversation ${conversationId}`);
 
             res.status(200).json({
                 message: 'Conversation deleted successfully',
@@ -425,7 +418,7 @@ const ChatController = {
         const { text, recipientType } = req.body;
         const uploadedFiles = req.files || [];
 
-        console.log('Sending image message:', {
+        console.log('sendImageMessage params:', {
             currentUserId,
             currentUserType,
             recipientId,
@@ -448,7 +441,6 @@ const ChatController = {
             uploadedFiles.forEach(file => {
                 const imageUrl = `/uploads/${file.filename}`;
                 imageUrls.push(imageUrl);
-                console.log('Image uploaded:', imageUrl);
             });
 
             // Generate conversation ID
@@ -468,7 +460,6 @@ const ChatController = {
             });
 
             const savedMessage = await newMessage.save();
-            console.log('Image message saved:', savedMessage._id);
 
             // TODO: Send real-time notification via WebSocket if implemented
 

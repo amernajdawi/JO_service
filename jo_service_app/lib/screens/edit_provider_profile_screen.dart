@@ -25,6 +25,15 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
   bool _isUploading = false;
   File? _selectedImage;
   String? _currentProfilePictureUrl;
+  bool _hasUnsavedChanges = false;
+  
+  // Original data for comparison
+  String _originalBusinessName = '';
+  String _originalDescription = '';
+  String _originalServices = '';
+  String _originalHourlyRate = '';
+  String _originalPhone = '';
+  String _originalAddress = '';
 
   // Form controllers
   final _businessNameController = TextEditingController();
@@ -109,6 +118,8 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
   }
 
   Future<void> _loadProviderProfile() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
     });
@@ -118,32 +129,42 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
       final token = await authService.getToken();
       final userId = await authService.getUserId();
 
+
       if (token == null || userId == null) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Authentication error. Please login again.')),
+            const SnackBar(content: Text('Authentication error. Please login again.')),
           );
+        }
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
 
       final provider = await _apiService.getMyProviderProfile(token);
 
+      if (mounted) {
         setState(() {
-        _businessNameController.text = provider.companyName ?? provider.fullName ?? '';
-        _descriptionController.text = provider.serviceDescription ?? '';
-        _servicesController.text = provider.serviceType ?? '';
-        _hourlyRateController.text = provider.hourlyRate?.toString() ?? '';
-        _phoneController.text = provider.contactInfo?.phone ?? '';
-        _addressController.text = provider.location?.addressText ?? '';
-        _currentProfilePictureUrl = provider.profilePictureUrl;
-        _isLoading = false;
-      });
-      } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-          ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading profile: $e')),
-          );
+          _businessNameController.text = provider.companyName ?? provider.fullName ?? '';
+          _descriptionController.text = provider.serviceDescription ?? '';
+          _servicesController.text = provider.serviceType ?? '';
+          _hourlyRateController.text = provider.hourlyRate?.toString() ?? '';
+          _phoneController.text = provider.contactInfo?.phone ?? '';
+          _addressController.text = provider.location?.addressText ?? '';
+          _currentProfilePictureUrl = provider.profilePictureUrl;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading profile: $e')),
+        );
+      }
     }
   }
 
@@ -277,26 +298,39 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
       final token = await authService.getToken();
       final userId = await authService.getUserId();
 
+
       if (token == null || userId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Authentication error. Please login again.')),
         );
+        setState(() {
+          _isSaving = false;
+        });
         return;
       }
 
       final updatedData = {
         'fullName': _businessNameController.text.trim(),
-        'companyName': _businessNameController.text.trim(),
+        'businessName': _businessNameController.text.trim(), // Backend expects 'businessName' not 'companyName'
         'serviceDescription': _descriptionController.text.trim(),
         'serviceType': _servicesController.text.trim(),
         'hourlyRate': double.tryParse(_hourlyRateController.text) ?? 0.0,
-        'contactInfo': {'phone': _phoneController.text.trim()},
-        'location': {'addressText': _addressController.text.trim()},
+        'phoneNumber': _phoneController.text.trim(), // Backend expects 'phoneNumber' as direct field
+        'location': {'address': _addressController.text.trim()}, // Backend expects 'address' not 'addressText'
       };
 
-      await _apiService.updateMyProviderProfile(token, updatedData);
+      final updatedProvider = await _apiService.updateMyProviderProfile(token, updatedData);
 
+      // Update form with server response, but use sent data for phone and address since server doesn't return them
       setState(() {
+        _businessNameController.text = updatedProvider.companyName ?? updatedProvider.fullName ?? '';
+        _descriptionController.text = updatedProvider.serviceDescription ?? '';
+        _servicesController.text = updatedProvider.serviceType ?? '';
+        _hourlyRateController.text = updatedProvider.hourlyRate?.toString() ?? '';
+        // Keep the form data we sent since server doesn't return nested fields properly
+        _phoneController.text = _phoneController.text; // Keep current form value
+        _addressController.text = _addressController.text; // Keep current form value
+        _currentProfilePictureUrl = updatedProvider.profilePictureUrl;
         _isSaving = false;
       });
 

@@ -7,6 +7,8 @@ import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../services/locale_service.dart';
+import '../l10n/app_localizations.dart';
 import './role_selection_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -51,8 +53,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (token == null || token.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication token not found. Please log in.')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.authenticationTokenNotFound)),
         );
         if (Navigator.canPop(context)) {
           Navigator.of(context).pop();
@@ -96,8 +98,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (token == null || token.isEmpty || _currentUser == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Authentication error. Cannot save profile.')),
+            SnackBar(
+                content: Text(AppLocalizations.of(context)!.authenticationError)),
           );
         }
         return;
@@ -120,13 +122,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile updated successfully!')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.profileUpdatedSuccessfully)),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update profile: $e')),
+            SnackBar(content: Text('${AppLocalizations.of(context)!.failedToUpdateProfile}: $e')),
           );
         }
       }
@@ -137,9 +139,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _pickImage() async {
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
             content: Text(
-                'Image upload is not supported in web mode. Please use the mobile app.')),
+                AppLocalizations.of(context)!.imageUploadNotSupportedWeb)),
       );
       return;
     }
@@ -156,7 +158,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorPickingImage}: $e')),
         );
       }
     }
@@ -178,8 +180,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (token == null || token.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Authentication error. Cannot upload image.')),
+            SnackBar(
+                content: Text(AppLocalizations.of(context)!.authenticationError)),
           );
         }
         setState(() {
@@ -199,15 +201,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Profile picture uploaded successfully!')),
+            SnackBar(
+                content: Text(AppLocalizations.of(context)!.profilePictureUploadedSuccessfully)),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload profile picture: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context)!.failedToUploadProfilePicture}: $e')),
         );
       }
       setState(() {
@@ -217,15 +219,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   void _handleLogout() async {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to log out?'),
+        title: Text(l10n.confirmLogout),
+        content: Text(l10n.areYouSureLogout),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -240,11 +243,117 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 );
               }
             },
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.logout, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
+  }
+
+  void _handleDeleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteAccount),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.deleteAccountConfirmation),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning, color: Colors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.deleteAccountWarning,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteAccount();
+            },
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final authService =
+          ctxProvider.Provider.of<AuthService>(context, listen: false);
+      
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text(AppLocalizations.of(context)!.deletingAccount),
+              ],
+            ),
+          ),
+        );
+      }
+      
+      await authService.deleteAccount();
+      
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.accountDeleted),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navigate to role selection screen
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          RoleSelectionScreen.routeName,
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog if it's open
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.failedToDeleteAccount}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildProfileInfo(User user) {
@@ -252,7 +361,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       children: [
         const SizedBox(height: 20),
         Text(
-          user.fullName ?? 'User',
+          user.fullName ?? AppLocalizations.of(context)!.user,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 5),
@@ -261,7 +370,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
         Text(
-          user.phoneNumber ?? 'No phone number',
+          user.phoneNumber ?? AppLocalizations.of(context)!.noPhoneNumber,
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
         const SizedBox(height: 20),
@@ -277,28 +386,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Full Name',
+            Text(AppLocalizations.of(context)!.fullName,
                 style: TextStyle(fontWeight: FontWeight.bold)),
             TextFormField(
               controller: _fullNameController,
-              decoration: const InputDecoration(
-                hintText: 'Enter your full name',
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.enterYourFullName,
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your name';
+                  return AppLocalizations.of(context)!.pleaseEnterYourName;
                 }
                 return null;
               },
             ),
             const SizedBox(height: 16),
-            const Text('Phone Number',
+            Text(AppLocalizations.of(context)!.phoneNumber,
                 style: TextStyle(fontWeight: FontWeight.bold)),
             TextFormField(
               controller: _phoneNumberController,
-              decoration: const InputDecoration(
-                hintText: 'Enter your phone number',
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.enterYourPhoneNumber,
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.phone,
@@ -318,11 +427,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     });
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 ElevatedButton(
                   onPressed: _saveProfile,
-                  child: const Text('Save'),
+                  child: Text(AppLocalizations.of(context)!.save),
                 ),
               ],
             ),
@@ -342,13 +451,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Account Settings',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context)!.accountSettings,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildSettingItem(
-              'Push Notifications',
+              AppLocalizations.of(context)!.pushNotifications,
               themeService.notificationsEnabled,
               (value) {
                 themeService.toggleNotifications(value);
@@ -356,7 +465,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
             const Divider(),
             _buildSettingItem(
-              'Dark Mode',
+              AppLocalizations.of(context)!.darkMode,
               themeService.darkModeEnabled,
               (value) {
                 themeService.toggleDarkMode(value);
@@ -364,7 +473,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
             const Divider(),
             _buildSettingItem(
-              'Location Services',
+              AppLocalizations.of(context)!.locationServices,
               themeService.locationServicesEnabled,
               (value) {
                 themeService.toggleLocationServices(value);
@@ -379,9 +488,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   backgroundColor: Colors.red,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: const Text(
-                  'Logout',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                child: Text(
+                  AppLocalizations.of(context)!.logout,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _handleDeleteAccount,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[800],
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  AppLocalizations.of(context)!.deleteAccount,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
             ),
@@ -410,9 +534,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+                  title: Text(l10n.userProfile),
         actions: [
           if (!_isEditing)
             IconButton(
@@ -423,6 +548,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 });
               },
             ),
+          IconButton(
+            icon: const Icon(Icons.translate),
+            onPressed: () async {
+              final localeService = ctxProvider.Provider.of<LocaleService>(context, listen: false);
+              await localeService.toggleLocale();
+              // Show a snackbar to confirm language change
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      localeService.currentLocale.languageCode == 'ar'
+                          ? 'تم تغيير اللغة إلى العربية'
+                          : 'Language changed to English',
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
         ],
       ),
       body: FutureBuilder<User?>(
@@ -435,12 +580,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text('Error loading profile: ${snapshot.error}'),
+                child: Text('${AppLocalizations.of(context)!.errorLoadingProfile}: ${snapshot.error}'),
               ),
             );
           }
           if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('Could not load user profile.'));
+            return Center(child: Text(AppLocalizations.of(context)!.couldNotLoadProfile));
           }
 
           final user = snapshot.data!;

@@ -9,8 +9,6 @@ const RatingController = {
         const { providerId, bookingId, rating, review } = req.body;
         const userId = req.auth.id;
 
-        console.log('Creating rating:', { providerId, bookingId, rating, review });
-        console.log('User ID:', userId);
 
         if (!providerId || !bookingId || !rating) {
             return res.status(400).json({ message: 'Provider ID, booking ID, and rating are required' });
@@ -86,8 +84,6 @@ const RatingController = {
         const bookingId = req.params.bookingId;
         const userId = req.auth.id;
 
-        console.log('Checking if user has rated booking:', bookingId);
-        console.log('User ID:', userId);
 
         try {
             const existingRating = await Rating.findOne({ booking: bookingId, user: userId });
@@ -103,8 +99,6 @@ const RatingController = {
         const providerId = req.params.providerId;
         const { page = 1, limit = 10 } = req.query;
 
-        console.log('Getting ratings for provider:', providerId);
-        console.log('Query params:', { page, limit });
 
         try {
             const pageNum = parseInt(page, 10);
@@ -140,8 +134,6 @@ const RatingController = {
         const userId = req.auth.id;
         const { page = 1, limit = 10 } = req.query;
 
-        console.log('Getting ratings for user:', userId);
-        console.log('Query params:', { page, limit });
 
         try {
             const pageNum = parseInt(page, 10);

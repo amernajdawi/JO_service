@@ -5,6 +5,8 @@ import '../models/booking_model.dart';
 import '../services/auth_service.dart';
 import '../services/booking_service.dart';
 import '../constants/theme.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/service_type_localizer.dart';
 import './booking_detail_screen.dart';
 
 class UserBookingsScreen extends StatefulWidget {
@@ -38,16 +40,7 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
     'cancelled_by_user',
   ];
 
-  // Tab labels for better UI display
-  final List<String> _tabLabels = [
-    'All',
-    'Pending',
-    'Accepted',
-    'In Progress',
-    'Completed',
-    'Declined',
-    'Cancelled',
-  ];
+  // Tab labels for better UI display - moved to build method for l10n support
 
   @override
   void initState() {
@@ -102,10 +95,10 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
       final userId = await authService.getUserId();
 
       if (token == null || userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication error. Please login again.')),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(AppLocalizations.of(context)!.authenticationError)),
+          );
         return;
       }
 
@@ -119,36 +112,41 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
 
         final bookings = result['bookings'] as List<Booking>;
 
-        setState(() {
-          _bookings = bookings;
-          _currentPage = result['currentPage'] as int;
-          _totalPages = result['totalPages'] as int;
-          _hasMorePages = _currentPage < _totalPages;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _bookings = bookings;
+            _currentPage = result['currentPage'] as int;
+            _totalPages = result['totalPages'] as int;
+            _hasMorePages = _currentPage < _totalPages;
+            _isLoading = false;
+          });
+        }
       } catch (e) {
         // If regular endpoint fails, try the direct method
-        print('Regular endpoint failed, trying direct method: $e');
         final bookings = await _bookingService.getBookingsByUserId(
           token: token,
           userId: userId,
         );
 
-        setState(() {
-          _bookings = bookings;
-          _currentPage = 1;
-          _totalPages = 1;
-          _hasMorePages = false;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _bookings = bookings;
+            _currentPage = 1;
+            _totalPages = 1;
+            _hasMorePages = false;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading bookings: $e')),
-      );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingBookings}: $e')),
+        );
+      }
     }
   }
 
@@ -156,9 +154,11 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
   Future<void> _loadMoreBookings() async {
     if (_isLoading || !_hasMorePages) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
@@ -167,8 +167,8 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
 
       if (token == null || userId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication error. Please login again.')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.authenticationError)),
         );
         return;
       }
@@ -182,27 +182,35 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
 
         final List<Booking> newBookings = result['bookings'] as List<Booking>;
 
-        setState(() {
-          _bookings.addAll(newBookings);
-          _currentPage = result['currentPage'] as int;
-          _totalPages = result['totalPages'] as int;
-          _hasMorePages = _currentPage < _totalPages;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _bookings.addAll(newBookings);
+            _currentPage = result['currentPage'] as int;
+            _totalPages = result['totalPages'] as int;
+            _hasMorePages = _currentPage < _totalPages;
+            _isLoading = false;
+          });
+        }
       } catch (e) {
         // If pagination fails, don't add more bookings
+        if (mounted) {
+          setState(() {
+            _hasMorePages = false;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _hasMorePages = false;
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading more bookings: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingMoreBookings}: $e')),
+        );
+      }
     }
   }
 
@@ -214,8 +222,8 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
 
       if (token == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication error. Please login again.')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.authenticationError)),
         );
         return;
       }
@@ -227,15 +235,15 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking cancelled successfully.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.bookingCancelled)),
       );
 
       // Refresh the list
       _fetchBookings();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cancelling booking: $e')),
-      );
+                ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${AppLocalizations.of(context)!.errorCancellingBooking}: $e')),
+          );
     }
   }
 
@@ -244,19 +252,19 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text('Are you sure you want to cancel this booking?'),
+                title: Text(AppLocalizations.of(context)!.cancelBooking),
+          content: Text(AppLocalizations.of(context)!.areYouSureCancelBooking),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('No'),
+            child: Text(AppLocalizations.of(context)!.no),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _cancelBooking(booking);
             },
-            child: const Text('Yes', style: TextStyle(color: Colors.red)),
+                          child: Text(AppLocalizations.of(context)!.yes, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -265,18 +273,27 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Tab labels with localization support
+    final List<String> tabLabels = [
+      l10n.all,
+      l10n.pending,
+      l10n.accepted,
+      l10n.inProgress,
+      l10n.completed,
+      l10n.declined,
+      l10n.cancelled,
+    ];;
     return Scaffold(
       backgroundColor: AppTheme.light,
       appBar: AppBar(
         backgroundColor: AppTheme.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Text(
-          'My Bookings',
+          l10n.myBookings,
           style: AppTheme.h3.copyWith(color: AppTheme.dark),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppTheme.dark),
-          onPressed: () => Navigator.of(context).pop(),
         ),
         bottom: TabBar(
           controller: _tabController,
@@ -287,7 +304,7 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
           indicatorWeight: 3,
           labelStyle: AppTheme.h4.copyWith(fontWeight: FontWeight.bold),
           unselectedLabelStyle: AppTheme.h4,
-          tabs: _tabLabels
+                      tabs: tabLabels
               .map((label) => Tab(
                     text: label,
                   ))
@@ -300,14 +317,14 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
         child: TabBarView(
           controller: _tabController,
           children: _statusFilters.map((status) {
-            return _buildBookingsList();
+            return _buildBookingsList(l10n);
           }).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildBookingsList() {
+  Widget _buildBookingsList(AppLocalizations l10n) {
     if (_isLoading && _bookings.isEmpty) {
       return Center(
         child: CircularProgressIndicator(color: AppTheme.primary),
@@ -326,12 +343,12 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'No bookings found',
+              l10n.noBookingsFound,
               style: AppTheme.h3.copyWith(color: AppTheme.dark),
             ),
             const SizedBox(height: 8),
             Text(
-              'Schedule a new service to see bookings here',
+              l10n.scheduleNewService,
               style: AppTheme.body3.copyWith(color: AppTheme.grey),
             ),
           ],
@@ -353,6 +370,7 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
   }
 
   Widget _buildBookingCard(Booking booking) {
+    final l10n = AppLocalizations.of(context)!;
     final statusColors = {
       'pending': AppTheme.warning,
       'accepted': AppTheme.primary,
@@ -363,16 +381,16 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
     };
 
     final statusLabels = {
-      'pending': 'Pending',
-      'accepted': 'Accepted',
-      'in_progress': 'In Progress',
-      'completed': 'Completed',
-      'declined_by_provider': 'Declined',
-      'cancelled_by_user': 'Cancelled',
+      'pending': l10n.pending,
+      'accepted': l10n.accepted,
+      'in_progress': l10n.inProgress,
+      'completed': l10n.completed,
+      'declined_by_provider': l10n.declined,
+      'cancelled_by_user': l10n.cancelled,
     };
 
     final color = statusColors[booking.status] ?? AppTheme.grey;
-    final label = statusLabels[booking.status] ?? 'Unknown';
+    final label = statusLabels[booking.status] ?? l10n.unknownStatus;
 
     // Format date once
     final formattedDate =
@@ -417,7 +435,9 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            booking.provider?.serviceType ?? 'Service',
+                            booking.provider?.serviceType != null 
+                                ? ServiceTypeLocalizer.getLocalizedServiceType(booking.provider!.serviceType!, l10n)
+                                : l10n.service,
                             style: AppTheme.h3.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -455,7 +475,7 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
                   Text(
                     booking.provider?.companyName ??
                         booking.provider?.fullName ??
-                        'Unknown Provider',
+                        l10n.unknownProvider,
                     style: AppTheme.body4.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -529,7 +549,7 @@ class _UserBookingsScreenState extends State<UserBookingsScreen>
                     onPressed: () => _showCancellationDialog(booking),
                     icon: Icon(Icons.cancel, color: AppTheme.danger, size: 18),
                     label: Text(
-                      'Cancel Booking',
+                                                    l10n.cancelBooking,
                       style: TextStyle(color: AppTheme.danger),
                     ),
                     style: TextButton.styleFrom(

@@ -6,6 +6,9 @@ import '../services/auth_service.dart';
 import '../services/booking_service.dart';
 import '../services/rating_service.dart';
 import '../services/navigation_service.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/service_type_localizer.dart';
+import './multi_criteria_rating_screen.dart';
 
 class BookingDetailScreen extends StatefulWidget {
   final String bookingId;
@@ -73,7 +76,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             });
           }
         } catch (e) {
-          print('Error checking if user has rated: $e');
           // Default to false if there's an error
           if (mounted) {
             setState(() {
@@ -150,6 +152,30 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     }
   }
 
+  Future<void> _navigateToRatingScreen() async {
+    if (_booking == null || _booking!.provider?.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Provider information not available')),
+      );
+      return;
+    }
+
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MultiCriteriaRatingScreen(booking: _booking!),
+      ),
+    );
+
+    // If rating was submitted successfully, refresh the screen
+    if (result == true && mounted) {
+      setState(() {
+        _hasRated = true;
+      });
+    }
+  }
+
+  // Legacy rating submission method (kept for potential fallback)
   Future<void> _submitRating() async {
     if (_userRating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,10 +202,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         return;
       }
 
-      await _ratingService.rateProvider(
+      // Use legacy method for backward compatibility
+      await _ratingService.rateProviderLegacy(
         token: token,
         bookingId: widget.bookingId,
-        providerId: _booking!.provider!.id ?? '',
+        providerId: _booking!.provider!.id!,
         rating: _userRating,
         review: _userReview,
       );
@@ -325,24 +352,42 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     }
 
     if (_hasRated) {
-      return Card(
+      return Container(
         margin: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green[50]!, Colors.green[100]!],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.green[200]!, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Colors.green[600],
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              const Text(
                 'Thank you for your rating!',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
-                'You have already rated this service.',
-                style: TextStyle(color: Colors.grey),
+                'You have successfully rated this service.',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -350,65 +395,111 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       );
     }
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Rate this service',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (int i = 1; i <= 5; i++)
-                  IconButton(
-                    icon: Icon(
-                      i <= _userRating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 36,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _userRating = i.toDouble();
-                      });
-                    },
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(
+                    Icons.star_rate,
+                    color: Colors.blue[600],
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Rate this service',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Share your experience with detailed ratings',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Review (optional)',
-                border: OutlineInputBorder(),
-                hintText: 'Write your experience with this service...',
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              height: 52,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [Colors.blue[600]!, Colors.blue[700]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              maxLines: 3,
-              onChanged: (value) {
-                _userReview = value;
-              },
-            ),
-            const SizedBox(height: 16),
-            Center(
               child: ElevatedButton(
-                onPressed: _isRatingSubmitting ? null : _submitRating,
-                child: _isRatingSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Submit Rating'),
+                onPressed: _navigateToRatingScreen,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.rate_review,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)!.rateProvider,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -429,8 +520,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No location information available'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.locationNotSpecified),
             backgroundColor: Colors.orange,
           ),
         );
@@ -456,12 +547,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Booking Details'),
+        title: Text(AppLocalizations.of(context)!.bookingDetails),
+        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _booking == null
-              ? const Center(child: Text('Booking not found'))
+              ? Center(child: Text(AppLocalizations.of(context)!.noBookingsFound))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -482,7 +574,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Status: ${_booking!.readableStatus}',
+                                      '${AppLocalizations.of(context)!.bookingStatus}: ${_booking!.readableStatus}',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
@@ -491,7 +583,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                     ),
                                     if (_booking!.createdAt != null)
                                       Text(
-                                        'Requested on ${DateFormat('MMM dd, yyyy').format(_booking!.createdAt!)}',
+                                        '${AppLocalizations.of(context)!.pending} ${DateFormat('MMM dd, yyyy').format(_booking!.createdAt!)}',
                                         style:
                                             const TextStyle(color: Colors.grey),
                                       ),
@@ -506,9 +598,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       const SizedBox(height: 16),
 
                       // Service Details
-                      const Text(
-                        'Service Details',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.serviceDetails,
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
@@ -525,12 +617,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           backgroundColor: Colors.grey[200],
                         ),
                         title: Text(
-                            _booking!.provider?.fullName ?? 'Unknown Provider'),
+                            _booking!.provider?.fullName ?? AppLocalizations.of(context)!.unknownProvider),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_booking!.provider?.serviceType ??
-                                'Unknown Service'),
+                            Text(_booking!.provider?.serviceType != null
+                                ? ServiceTypeLocalizer.getLocalizedServiceType(_booking!.provider!.serviceType!, AppLocalizations.of(context)!)
+                                : AppLocalizations.of(context)!.unknownService),
                             if (_booking!.provider?.averageRating != null &&
                                 _booking!.provider!.averageRating! > 0)
                               Row(
@@ -549,12 +642,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       // Date and Time
                       ListTile(
                         leading: const Icon(Icons.calendar_today),
-                        title: const Text('Date'),
+                        title: Text(AppLocalizations.of(context)!.serviceDate),
                         subtitle: Text(formattedDate),
                       ),
                       ListTile(
                         leading: const Icon(Icons.access_time),
-                        title: const Text('Time'),
+                        title: Text(AppLocalizations.of(context)!.serviceTime),
                         subtitle: Text(formattedTime),
                       ),
 
@@ -563,13 +656,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           _booking!.serviceLocationDetails!.isNotEmpty)
                         ListTile(
                           leading: const Icon(Icons.location_on),
-                          title: const Text('Location'),
+                          title: Text(AppLocalizations.of(context)!.location),
                           subtitle: Text(_booking!.serviceLocationDetails!),
                           trailing: _userType == 'provider' 
                               ? IconButton(
                                   icon: const Icon(Icons.directions),
                                   onPressed: () => _openNavigation(),
-                                  tooltip: 'Open in Google Maps',
+                                  tooltip: AppLocalizations.of(context)!.mapView,
                                 )
                               : null,
                         ),
@@ -579,7 +672,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           _booking!.userNotes!.isNotEmpty)
                         ListTile(
                           leading: const Icon(Icons.note),
-                          title: const Text('Notes'),
+                          title: Text(AppLocalizations.of(context)!.notes),
                           subtitle: Text(_booking!.userNotes!),
                         ),
 

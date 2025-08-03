@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../constants/theme.dart';
 import '../widgets/uber_input.dart'; // Use the new UberInput widget
@@ -24,21 +25,23 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
   String? _errorMessage;
 
   String? _validateEmail(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return 'Email is required';
+      return l10n.emailRequired;
     }
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Enter a valid email address';
+      return l10n.enterValidEmail;
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return 'Password is required';
+      return l10n.passwordRequired;
     }
     if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return l10n.passwordMinLength;
     }
     return null;
   }
@@ -113,7 +116,7 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
                 
                 // Main Title
                 Text(
-                  'Welcome back',
+                  AppLocalizations.of(context)!.welcomeBack,
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
@@ -123,7 +126,7 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to your provider account',
+                  AppLocalizations.of(context)!.signInToYourProviderAccount,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
@@ -136,8 +139,8 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
                 
                 // Email Input
                 UberInput(
-                  label: 'Email address',
-                  hint: 'Enter your email',
+                  label: AppLocalizations.of(context)!.emailAddress,
+                  hint: AppLocalizations.of(context)!.enterYourEmail,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   validator: _validateEmail,
@@ -147,8 +150,8 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
                 
                 // Password Input
                 UberInput(
-                  label: 'Password',
-                  hint: 'Enter your password',
+                  label: AppLocalizations.of(context)!.password,
+                  hint: AppLocalizations.of(context)!.enterYourPassword,
                   controller: _passwordController,
                   obscureText: true,
                   validator: _validatePassword,
@@ -223,9 +226,9 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
                               ),
                             ),
                           )
-                        : const Text(
-                            'Sign in',
-                            style: TextStyle(
+                        : Text(
+                            AppLocalizations.of(context)!.signIn,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,
@@ -254,9 +257,9 @@ class _ProviderLoginScreenState extends State<ProviderLoginScreen> {
                           color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
                         ),
                         children: [
-                          const TextSpan(text: "Don't have an account? "),
+                          TextSpan(text: AppLocalizations.of(context)!.dontHaveAnAccount),
                           TextSpan(
-                            text: 'Sign up',
+                            text: AppLocalizations.of(context)!.signUp,
                             style: TextStyle(
                               color: isDark ? Colors.white : const Color(0xFF000000),
                               fontWeight: FontWeight.w600,

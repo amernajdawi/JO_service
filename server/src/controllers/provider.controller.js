@@ -119,27 +119,28 @@ const ProviderController = {
         // Fields that a provider can update (whitelist to prevent unwanted updates)
         const allowedUpdates = [
             'fullName',
-            'companyName', 
-            'contactInfo', 
-            'location',
+            'phoneNumber', // ✅ FIXED: Added phoneNumber to allowed updates
+            'businessName', // ✅ FIXED: Changed from 'companyName' to match schema
             'serviceType', 
             'serviceDescription',
-            'availabilityDetails',
-            'operationalHours',
-            'serviceAreas', // Assuming this is an array of strings or objects
+            'serviceCategory',
+            'serviceTags',
+            'serviceAreas',
             'profilePictureUrl',
-            'bannerImage',
             'hourlyRate',
-            // 'location' can be complex, might need separate handling or more specific fields
+            'availability',
+            // Location and address will be handled separately below
         ];
 
         const updates = {};
+        
+        // Handle regular field updates
         for (const key of Object.keys(updateData)) {
             if (allowedUpdates.includes(key)) {
                 // Ensure hourlyRate is stored as a number if provided
                 if (key === 'hourlyRate') {
                     const rate = parseFloat(updateData[key]);
-                    if (!isNaN(rate)) {
+                    if (!isNaN(rate) && rate >= 0) {
                         updates[key] = rate;
                     }
                 } else {
@@ -148,41 +149,74 @@ const ProviderController = {
             }
         }
         
+        // ✅ FIXED: Handle address updates more flexibly
+        // Support both simple address string and complex location object
+        if (updateData.address || updateData.location) {
+            const currentProvider = await Provider.findById(providerId);
+            if (!currentProvider) {
+                return res.status(404).json({ message: 'Provider not found.' });
+            }
+
+            // Initialize location object with existing data or defaults
+            const locationUpdate = {
+                type: 'Point',
+                coordinates: currentProvider.location?.coordinates || [0, 0],
+                address: currentProvider.location?.address || '',
+                city: currentProvider.location?.city || '',
+                state: currentProvider.location?.state || '',
+                zipCode: currentProvider.location?.zipCode || '',
+                country: currentProvider.location?.country || 'US'
+            };
+
+            // Handle simple address string update
+            if (updateData.address && typeof updateData.address === 'string') {
+                locationUpdate.address = updateData.address.trim();
+            }
+
+            // Handle complex location object update
+            if (updateData.location) {
+                if (updateData.location.address) {
+                    locationUpdate.address = updateData.location.address.trim();
+                }
+                if (updateData.location.city) {
+                    locationUpdate.city = updateData.location.city.trim();
+                }
+                if (updateData.location.state) {
+                    locationUpdate.state = updateData.location.state.trim();
+                }
+                if (updateData.location.zipCode) {
+                    locationUpdate.zipCode = updateData.location.zipCode.trim();
+                }
+                if (updateData.location.country) {
+                    locationUpdate.country = updateData.location.country.trim();
+                }
+                
+                // Handle coordinates if provided
+                if (Array.isArray(updateData.location.coordinates) && 
+                    updateData.location.coordinates.length === 2 &&
+                    typeof updateData.location.coordinates[0] === 'number' &&
+                    typeof updateData.location.coordinates[1] === 'number'
+                ) {
+                    locationUpdate.coordinates = [updateData.location.coordinates[0], updateData.location.coordinates[1]];
+                } else if (updateData.location.coordinates) {
+                    return res.status(400).json({ message: "Invalid location.coordinates format. Expected [longitude, latitude]." });
+                }
+            }
+
+            updates.location = locationUpdate;
+        }
+        
         // Prevent password updates through this route
         if (updates.password) {
             delete updates.password;
         }
-        // Location updates require specific handling if using GeoJSON
-        // For now, we'll assume 'location.coordinates' and 'location.addressText' might be passed
-        // and need to be structured correctly if we are to update 'location.point'
-        if (updateData.location) {
-            updates.location = {}; // Clear existing location to rebuild it carefully
-            if (updateData.location.addressText) {
-                updates.location.addressText = updateData.location.addressText;
-            }
-            // IMPORTANT: If coordinates are provided, they must be in [longitude, latitude] order
-            if (Array.isArray(updateData.location.coordinates) && 
-                updateData.location.coordinates.length === 2 &&
-                typeof updateData.location.coordinates[0] === 'number' &&
-                typeof updateData.location.coordinates[1] === 'number'
-            ) {
-                updates.location.point = {
-                    type: 'Point',
-                    coordinates: [updateData.location.coordinates[0], updateData.location.coordinates[1]]
-                };
-            } else if (updateData.location.coordinates) {
-                // Handle case where coordinates are provided but not in the correct format
-                return res.status(400).json({ message: "Invalid location.coordinates format. Expected [longitude, latitude]." });
-            }
-        }
 
-
-        if (Object.keys(updates).length === 0 && !updateData.location) { // Also check updateData.location because it's handled separately
+        // Check if we have any updates to make
+        if (Object.keys(updates).length === 0) {
             return res.status(400).json({ message: 'No valid update fields provided.' });
         }
         
-        console.log('[DEBUG Server] Raw updateData (req.body):', JSON.stringify(updateData, null, 2));
-        console.log('[DEBUG Server] Constructed updates object:', JSON.stringify(updates, null, 2));
+        console.log('📝 Updating provider profile with data:', JSON.stringify(updates, null, 2));
 
         try {
             const provider = await Provider.findByIdAndUpdate(
@@ -195,10 +229,10 @@ const ProviderController = {
                 return res.status(404).json({ message: 'Provider not found.' });
             }
 
-            console.log('[DEBUG Server] Provider object being sent back to client:', JSON.stringify(provider, null, 2));
+            console.log('✅ Provider profile updated successfully');
             res.status(200).json({ message: 'Profile updated successfully', provider });
         } catch (error) {
-            console.error('Error updating provider profile:', error);
+            console.error('❌ Error updating provider profile:', error);
             if (error.name === 'ValidationError') {
                 return res.status(400).json({ message: 'Validation failed', errors: error.errors });
             }
@@ -208,12 +242,8 @@ const ProviderController = {
 
     // GET /api/providers/me - Get authenticated provider's own profile
     async getMyProfile(req, res) {
-        console.log("===== getMyProfile DEBUG =====");
-        console.log("req.auth:", req.auth);
         
         const rawProviderId = req.auth.id; // Get the ID from the token
-        console.log('[getMyProfile] Raw ID from token:', rawProviderId);
-        console.log('[getMyProfile] Type of raw ID from token:', typeof rawProviderId);
         
         // Check if the token is actually present and formatted correctly
         if (!req.headers.authorization) {
@@ -227,8 +257,6 @@ const ProviderController = {
         }
 
         // Ensure it's a valid ObjectId
-        console.log('[getMyProfile] Checking if ID is valid ObjectId:', rawProviderId);
-        console.log('[getMyProfile] ObjectId.isValid result:', mongoose.Types.ObjectId.isValid(rawProviderId));
         
         if (!mongoose.Types.ObjectId.isValid(rawProviderId)) {
             console.error('[getMyProfile] Error: Invalid Provider ID format received from token:', rawProviderId);
@@ -236,7 +264,6 @@ const ProviderController = {
         }
 
         const providerObjectId = new mongoose.Types.ObjectId(rawProviderId);
-        console.log('[getMyProfile] Attempting to fetch profile for provider ObjectId:', providerObjectId);
 
         try {
             const provider = await Provider.findById(providerObjectId).select('-password');
@@ -246,7 +273,6 @@ const ProviderController = {
                 return res.status(404).json({ message: 'Provider profile not found.' });
             }
 
-            console.log('[getMyProfile] Successfully fetched profile for ID:', providerObjectId);
             res.status(200).json(provider);
         } catch (error) {
             console.error('[getMyProfile] Error fetching own provider profile for ID:', providerObjectId, 'Error:', error);
@@ -308,7 +334,6 @@ const ProviderController = {
                 verified = false   // Whether to only show verified providers
             } = req.query;
             
-            console.log('Searching providers with params:', req.query);
             
             // Build the query object
             const queryObj = {};
@@ -345,7 +370,6 @@ const ProviderController = {
             
             // Note: All providers shown to users are verified by default
             
-            console.log('MongoDB query:', JSON.stringify(queryObj));
             
             // Set up sorting
             let sortObj = {};
@@ -361,7 +385,6 @@ const ProviderController = {
             // Always add _id as final sort to ensure consistent pagination
             sortObj._id = 1;
             
-            console.log('Sort options:', sortObj);
             
             // Calculate pagination
             const pageNum = parseInt(page, 10);
@@ -381,7 +404,6 @@ const ProviderController = {
             // Calculate total pages
             const totalPages = Math.ceil(total / limitNum);
             
-            console.log(`Found ${providers.length} providers out of ${total} total`);
             
             res.status(200).json({
                 providers,
@@ -408,7 +430,6 @@ const ProviderController = {
                 limit = 10     // Results per page
             } = req.query;
             
-            console.log('Finding nearby providers:', req.query);
             
             // Validate required parameters
             if (!latitude || !longitude) {
@@ -435,7 +456,6 @@ const ProviderController = {
                 queryObj.serviceCategory = category;
             }
             
-            console.log('MongoDB geospatial query:', JSON.stringify(queryObj));
             
             // Calculate pagination
             const pageNum = parseInt(page, 10);
@@ -454,7 +474,6 @@ const ProviderController = {
             // Calculate total pages
             const totalPages = Math.ceil(total / limitNum);
             
-            console.log(`Found ${providers.length} nearby providers out of ${total} total`);
             
             res.status(200).json({
                 providers,
@@ -523,7 +542,6 @@ const ProviderController = {
             const providerId = req.auth.id;
             const { coordinates, address, city, state, zipCode, country } = req.body;
             
-            console.log(`Updating location for provider ${providerId}:`, req.body);
             
             // Validate the coordinates
             if (!coordinates || coordinates.length !== 2 || 
@@ -575,7 +593,6 @@ const ProviderController = {
                 hourlyRate
             } = req.body;
             
-            console.log(`Updating services for provider ${providerId}:`, req.body);
             
             const updateData = {};
             
@@ -607,6 +624,48 @@ const ProviderController = {
                 return res.status(400).json({ message: 'Validation error', errors: error.errors });
             }
             res.status(500).json({ message: 'Failed to update services', error: error.message });
+        }
+    },
+
+    // DELETE /api/providers/me - Delete authenticated provider's account
+    async deleteMyAccount(req, res) {
+        const providerId = req.auth.id;
+        
+        if (!providerId) {
+            return res.status(400).json({ message: 'Provider ID not found in authentication token.' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(providerId)) {
+            return res.status(400).json({ message: 'Invalid provider ID format.' });
+        }
+
+        try {
+            // Find the provider first to make sure they exist
+            const provider = await Provider.findById(providerId);
+            
+            if (!provider) {
+                return res.status(404).json({ message: 'Provider not found.' });
+            }
+
+            // Delete the provider account
+            await Provider.findByIdAndDelete(providerId);
+            
+            // TODO: In a production environment, you might want to:
+            // 1. Delete related data (bookings, messages, etc.)
+            // 2. Send confirmation email
+            // 3. Log the deletion for audit purposes
+            // 4. Handle file cleanup (profile pictures, etc.)
+            
+            res.status(200).json({ 
+                message: 'Account deleted successfully',
+                success: true 
+            });
+        } catch (error) {
+            console.error('Error deleting provider account:', error);
+            res.status(500).json({ 
+                message: 'Failed to delete account', 
+                error: error.message 
+            });
         }
     }
 };

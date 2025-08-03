@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../constants/theme.dart';
 import '../widgets/uber_input.dart'; // Use the new UberInput widget
@@ -46,49 +47,54 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
   ];
 
   String? _validateEmail(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return 'Email is required';
+      return l10n.emailRequired;
     }
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Enter a valid email address';
+      return l10n.enterValidEmail;
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return 'Password is required';
+      return l10n.passwordRequired;
     }
     if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return l10n.passwordMinLength;
     }
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return 'Please confirm your password';
+      return l10n.confirmPasswordRequired;
     }
     if (value != _passwordController.text) {
-      return 'Passwords do not match';
+      return l10n.passwordsDoNotMatch;
     }
     return null;
   }
 
   String? _validateRequired(String? value, String fieldName) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return '$fieldName is required';
+      return l10n.fieldRequired;
     }
     return null;
   }
 
   String? _validateHourlyRate(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return 'Hourly rate is required';
+      return l10n.hourlyRateRequired;
     }
     final rate = double.tryParse(value);
     if (rate == null || rate <= 0) {
-      return 'Enter a valid hourly rate';
+      return l10n.enterValidRate;
     }
     return null;
   }
@@ -148,6 +154,7 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -180,7 +187,7 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 
                 // Main Title
                 Text(
-                  'Join as provider',
+                                            l10n.joinAsProvider,
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
@@ -190,7 +197,7 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Start offering your services today',
+                  l10n.startOfferingServices,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
@@ -203,7 +210,7 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 
                 // Personal Information Section
                 Text(
-                  'Personal Information',
+                                            l10n.personalInformation,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -213,17 +220,17 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Full name',
-                  hint: 'Enter your full name',
+                                      label: l10n.fullName,
+                    hint: l10n.enterFullName,
                   controller: _fullNameController,
-                  validator: (value) => _validateRequired(value, 'Full name'),
+                                      validator: (value) => _validateRequired(value, l10n.fullName),
                 ),
                 
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Email address',
-                  hint: 'Enter your email',
+                                      label: l10n.email,
+                    hint: l10n.enterEmail,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   validator: _validateEmail,
@@ -232,8 +239,8 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Password',
-                  hint: 'Enter your password',
+                                      label: l10n.password,
+                    hint: l10n.enterPassword,
                   controller: _passwordController,
                   obscureText: true,
                   validator: _validatePassword,
@@ -242,8 +249,8 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Confirm password',
-                  hint: 'Confirm your password',
+                                      label: l10n.confirmPassword,
+                    hint: l10n.confirmYourPassword,
                   controller: _confirmPasswordController,
                   obscureText: true,
                   validator: _validateConfirmPassword,
@@ -253,7 +260,7 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 
                 // Business Information Section
                 Text(
-                  'Business Information',
+                                            l10n.businessInformation,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -263,26 +270,26 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Company name',
-                  hint: 'Enter your company name',
+                                      label: l10n.companyName,
+                    hint: l10n.enterCompanyName,
                   controller: _companyNameController,
-                  validator: (value) => _validateRequired(value, 'Company name'),
+                                      validator: (value) => _validateRequired(value, l10n.companyName),
                 ),
                 
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Service type',
-                  hint: 'e.g., Plumbing, Electrical, Cleaning',
+                                      label: l10n.serviceType,
+                                      hint: l10n.enterServiceType,
                   controller: _serviceTypeController,
-                  validator: (value) => _validateRequired(value, 'Service type'),
+                                      validator: (value) => _validateRequired(value, l10n.serviceType),
                 ),
                 
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Hourly rate (JOD)',
-                  hint: 'Enter your hourly rate',
+                                      label: '${l10n.hourlyRate} (JOD)',
+                                      hint: l10n.enterHourlyRate,
                   controller: _hourlyRateController,
                   keyboardType: TextInputType.number,
                   validator: _validateHourlyRate,
@@ -295,7 +302,7 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'City',
+                      l10n.city,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -343,8 +350,8 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                 const SizedBox(height: 16),
                 
                 UberInput(
-                  label: 'Address',
-                  hint: 'Enter your detailed address',
+                                      label: l10n.address,
+                    hint: l10n.enterDetailedAddress,
                   controller: _addressController,
                   maxLines: 2,
                 ),
@@ -418,9 +425,9 @@ class _ProviderSignUpScreenState extends State<ProviderSignUpScreen> {
                               ),
                             ),
                           )
-                        : const Text(
-                            'Create provider account',
-                            style: TextStyle(
+                        : Text(
+                            l10n.createProviderAccount,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,

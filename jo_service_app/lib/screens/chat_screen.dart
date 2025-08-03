@@ -129,30 +129,23 @@ class _ChatScreenState extends State<ChatScreen>
       bool photosChanged = false;
       if (currentPhotos.length != newPhotos.length) {
         photosChanged = true;
-        print('DEBUG: Photo count changed: ${currentPhotos.length} -> ${newPhotos.length}');
       } else {
         // Check if any photo URLs are different
         for (int i = 0; i < currentPhotos.length; i++) {
           if (currentPhotos[i] != newPhotos[i]) {
             photosChanged = true;
-            print('DEBUG: Photo URL changed at index $i: ${currentPhotos[i]} -> ${newPhotos[i]}');
             break;
           }
         }
       }
       
       if (photosChanged) {
-        print('DEBUG: Booking photos changed, refreshing UI');
-        print('DEBUG: Old photos: $currentPhotos');
-        print('DEBUG: New photos: $newPhotos');
         setState(() {
           _updatedConversation = updatedConversation;
         });
       } else {
-        print('DEBUG: No booking photo changes detected');
       }
     } catch (e) {
-      print('DEBUG: Error refreshing booking photos: $e');
     }
   }
 
@@ -190,13 +183,11 @@ class _ChatScreenState extends State<ChatScreen>
       );
       
       // Always update the conversation with the latest data including booking photos
-      print('DEBUG: Found updated conversation with ${updatedConversation.bookingPhotos.length} booking photos');
       setState(() {
         // Always store the updated conversation data to preserve booking photos
         _updatedConversation = updatedConversation;
       });
     } catch (e) {
-      print('DEBUG: Error refreshing conversation data: $e');
     }
 
     // 2. Load Chat History
@@ -204,15 +195,11 @@ class _ChatScreenState extends State<ChatScreen>
     try {
       history = await _apiService.fetchChatHistory(
           widget.conversation.participantId, token, currentUserId);
-      print('DEBUG: Loaded ${history.length} messages from chat history');
       for (var msg in history) {
-        print('DEBUG: Message type: ${msg.messageType}, hasImages: ${msg.hasImages}, text: ${msg.text}');
         if (msg.hasImages) {
-          print('DEBUG: Image URLs: ${msg.imageUrls}');
         }
       }
     } catch (e) {
-      print('DEBUG: Error loading chat history: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to load chat history: $e')));
@@ -249,12 +236,9 @@ class _ChatScreenState extends State<ChatScreen>
               _messages.add(newMessage);
               _messages.sort(
                   (a, b) => a.timestamp.compareTo(b.timestamp)); // Ensure order
-              print('Added new message to chat: ${newMessage.text}');
             } else {
-              print('Duplicate message detected, not adding: ${newMessage.text}');
             }
           } else {
-            print('Message not relevant to this conversation: ${newMessage.text}');
           }
         });
         _scrollToBottom();
@@ -283,12 +267,8 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _sendMessage() async {
     final messageText = _messageController.text.trim();
-    print('ChatScreen: Attempting to send message: "$messageText"');
-    print('ChatScreen: Is connected: $_isConnected');
-    print('ChatScreen: Recipient ID: ${widget.conversation.participantId}');
     
     if (messageText.isNotEmpty && _isConnected) {
-      print('ChatScreen: Sending message via ChatService');
       
       // Haptic feedback for sending message
       HapticFeedback.lightImpact();
@@ -323,7 +303,6 @@ class _ChatScreenState extends State<ChatScreen>
       // Send message via WebSocket
       _chatService.sendMessage(widget.conversation.participantId, messageText);
     } else {
-      print('ChatScreen: Cannot send message - Empty: ${messageText.isEmpty}, Not connected: ${!_isConnected}');
       if (!_isConnected) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -545,12 +524,8 @@ class _ChatScreenState extends State<ChatScreen>
   Widget _buildBookingPhotos() {
     // Always prioritize _updatedConversation, and ensure we have the latest data
     final conversation = _updatedConversation ?? widget.conversation;
-    print('DEBUG: _buildBookingPhotos called, photos count: ${conversation.bookingPhotos.length}');
-    print('DEBUG: Using ${_updatedConversation != null ? "updated" : "original"} conversation data');
-    print('DEBUG: Booking photos: ${conversation.bookingPhotos}');
     
     if (conversation.bookingPhotos.isEmpty) {
-      print('DEBUG: No booking photos to display');
       return const SizedBox.shrink(); // No photos, show nothing
     }
 
@@ -611,7 +586,6 @@ class _ChatScreenState extends State<ChatScreen>
                     ? photoUrl 
                     : '${ConversationService.baseImageUrl}${photoUrl.startsWith('/') ? photoUrl : '/$photoUrl'}';
                 
-                print('DEBUG: Booking photo URL construction - Original: $photoUrl, Full: $fullUrl');
 
                 return Padding(
                   padding: EdgeInsets.only(
@@ -741,7 +715,6 @@ class _ChatScreenState extends State<ChatScreen>
       fullPhotoUrl = '$baseUrl/uploads/$photoUrl';
     }
     
-    print('Loading booking photo: $fullPhotoUrl'); // Debug log
     
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
@@ -1243,7 +1216,6 @@ class _ChatScreenState extends State<ChatScreen>
         const SnackBar(content: Text('Message deleted successfully')),
       );
     } catch (e) {
-      print('Error deleting message: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to delete message: $e')),
       );
@@ -1293,7 +1265,6 @@ class _ChatScreenState extends State<ChatScreen>
       await _sendImageMessage(File(image.path));
       
     } catch (e) {
-      print('Error picking image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to pick image: $e')),
@@ -1327,15 +1298,12 @@ class _ChatScreenState extends State<ChatScreen>
         ),
       );
 
-      print('Sending image message to: $uri');
       
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       
-      print('Image message response: ${response.statusCode} - ${response.body}');
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Image message sent successfully');
         
         // Create optimistic message for immediate UI update
         final optimisticMessage = ChatMessage(
@@ -1360,7 +1328,6 @@ class _ChatScreenState extends State<ChatScreen>
       }
       
     } catch (e) {
-      print('Error sending image message: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to send image: $e')),

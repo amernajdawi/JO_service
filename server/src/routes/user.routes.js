@@ -14,4 +14,7 @@ router.put('/me', protectRoute, isUser, UserController.updateMyProfile);
 // POST /api/users/me/profile-picture - Upload profile picture
 router.post('/me/profile-picture', protectRoute, isUser, upload.single('profilePicture'), UserController.uploadProfilePicture);
 
+// DELETE /api/users/me - Delete user account
+router.delete('/me', protectRoute, isUser, UserController.deleteMyAccount);
+
 module.exports = router; 

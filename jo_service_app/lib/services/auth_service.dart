@@ -34,6 +34,7 @@ class AuthService with ChangeNotifier {
   final _storage = const FlutterSecureStorage();
   
   String get _authBaseUrl => "${ApiService.getBaseUrl()}/auth";
+  String get _apiBaseUrl => ApiService.getBaseUrl(); // getBaseUrl() already includes /api
 
   // Using more specific keys for clarity with new _saveAuthData logic
   static const String _tokenKey = 'auth_token_key';
@@ -65,7 +66,6 @@ class AuthService with ChangeNotifier {
       try {
         _userInfo = UserInfo.fromJson(json.decode(userInfoString));
       } catch (e) {
-        print("Error decoding user info from storage: $e");
         await _storage.delete(key: _userInfoKey); // Clear corrupted data
       }
     }
@@ -92,6 +92,9 @@ class AuthService with ChangeNotifier {
     await _storage.write(
         key: _userInfoKey, value: json.encode(userInfo.toJson()));
 
+    // User authenticated successfully
+    print('AuthService: User authenticated - ${userInfo.id} (${userType})');
+
     _isLoading = false;
     notifyListeners(); // Notify UI that auth operation completed and state updated
   }
@@ -108,6 +111,9 @@ class AuthService with ChangeNotifier {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userTypeKey);
     await _storage.delete(key: _userInfoKey);
+
+    // User logged out - all data cleared
+    print('AuthService: User logged out - clearing all data');
 
     _isLoading = false;
     notifyListeners();
@@ -209,7 +215,8 @@ class AuthService with ChangeNotifier {
   Future<Map<String, dynamic>> loginUser(
       {required String email, required String password}) async {
     try {
-      final response = await http.post(
+      // First try user login
+      final userResponse = await http.post(
         Uri.parse('$_authBaseUrl/user/login'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
@@ -218,25 +225,65 @@ class AuthService with ChangeNotifier {
           'email': email,
           'password': password,
         }),
-      ).timeout(const Duration(seconds: 10)); // Add 10-second timeout
+      ).timeout(const Duration(seconds: 10));
 
-      final responseData = json.decode(response.body);
-      if (response.statusCode == 200 && responseData['token'] != null) {
+      final userResponseData = json.decode(userResponse.body);
+      
+      if (userResponse.statusCode == 200 && userResponseData['token'] != null) {
+        // User login successful
         await _saveAuthData(
-            responseData['token'],
+            userResponseData['token'],
             'user',
             UserInfo(
-                id: responseData['user']['_id'],
+                id: userResponseData['user']['_id'],
                 email: email,
-                fullName: responseData['user']['fullName']));
-        return responseData; // Contains user and token
+                fullName: userResponseData['user']['fullName']));
+        return userResponseData;
       } else {
-        throw Exception(responseData['message'] ?? 'Failed to login user');
+        // User login failed, try provider login
+        try {
+          final providerResponse = await http.post(
+            Uri.parse('$_authBaseUrl/provider/login'),
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(<String, String>{
+              'email': email,
+              'password': password,
+            }),
+          ).timeout(const Duration(seconds: 10));
+
+          final providerResponseData = json.decode(providerResponse.body);
+          
+          if (providerResponse.statusCode == 200 && providerResponseData['token'] != null) {
+            // Provider login successful
+            await _saveAuthData(
+                providerResponseData['token'],
+                'provider',
+                UserInfo(
+                    id: providerResponseData['provider']['_id'],
+                    email: email,
+                    fullName: providerResponseData['provider']['fullName']));
+            return {
+              'message': 'Provider logged in successfully',
+              'user': providerResponseData['provider'], // Keep same structure for compatibility
+              'token': providerResponseData['token'],
+              'userType': 'provider' // Add flag to identify this is a provider
+            };
+          } else {
+            throw Exception(providerResponseData['message'] ?? 'Invalid credentials');
+          }
+        } catch (providerError) {
+          // Both user and provider login failed
+          throw Exception('Invalid credentials');
+        }
       }
     } catch (e) {
-      print('Login error: $e');
       if (e.toString().contains('TimeoutException')) {
         throw Exception('Connection timeout. Please check your network connection.');
+      }
+      if (e.toString().contains('Invalid credentials')) {
+        throw Exception('Invalid credentials');
       }
       throw Exception('Network error: ${e.toString()}');
     }
@@ -270,7 +317,6 @@ class AuthService with ChangeNotifier {
         throw Exception(responseData['message'] ?? 'Failed to login provider');
       }
     } catch (e) {
-      print('Login error: $e');
       if (e.toString().contains('TimeoutException')) {
         throw Exception('Connection timeout. Please check your network connection.');
       }
@@ -281,5 +327,70 @@ class AuthService with ChangeNotifier {
   Future<void> logout() async {
     await clearAuthData();
     // _isLoading and notifyListeners are handled in clearAuthData
+  }
+
+  Future<void> deleteAccount() async {
+    try {
+      // Ensure we have valid authentication
+      if (_token == null || _userType == null) {
+        throw Exception('Not authenticated. Please log in again.');
+      }
+
+      // Refresh token from storage to ensure we have the latest
+      await _loadAuthData();
+      
+      if (_token == null || _userType == null) {
+        throw Exception('Authentication expired. Please log in again.');
+      }
+
+      final endpoint = _userType == 'user' ? 'users/me' : 'providers/me';
+      final url = '$_apiBaseUrl/$endpoint';
+      
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $_token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      // Debug information
+      print('DELETE Account - Status: ${response.statusCode}');
+      print('DELETE Account - Body: ${response.body}');
+      print('DELETE Account - Headers: ${response.headers}');
+
+      if (response.statusCode == 200) {
+        // Account deleted successfully, clear local data
+        await clearAuthData();
+      } else if (response.statusCode == 401) {
+        // Authentication failed - token is invalid or expired
+        await clearAuthData(); // Clear invalid auth data
+        throw Exception('Your session has expired. Please log in again to delete your account.');
+      } else if (response.statusCode == 403) {
+        // Forbidden - user doesn't have permission
+        throw Exception('You do not have permission to delete this account.');
+      } else {
+        // Handle other error responses
+        String errorMessage = 'Failed to delete account';
+        try {
+          // Try to parse as JSON first
+          final responseData = json.decode(response.body);
+          errorMessage = responseData['message'] ?? 'Failed to delete account';
+        } catch (e) {
+          // If JSON parsing fails, check if it's HTML or plain text
+          if (response.body.contains('<!DOCTYPE html>') || response.body.contains('<html>')) {
+            errorMessage = 'Server error occurred. Please try again later.';
+          } else {
+            errorMessage = response.body.isNotEmpty ? response.body : 'Failed to delete account';
+          }
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (e.toString().contains('TimeoutException')) {
+        throw Exception('Connection timeout. Please check your network connection.');
+      }
+      throw Exception('Error deleting account: ${e.toString()}');
+    }
   }
 }

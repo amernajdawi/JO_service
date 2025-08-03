@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import './l10n/app_localizations.dart';
 import 'package:jo_service_app/screens/provider_detail_screen.dart'; // Added import
 import 'package:jo_service_app/services/auth_service.dart'; // Added import
 import 'package:jo_service_app/services/theme_service.dart'; // Import ThemeService
+import 'package:jo_service_app/services/locale_service.dart'; // Import LocaleService
 import 'package:jo_service_app/services/background_service.dart'; // Import BackgroundService
 import 'package:jo_service_app/services/app_lifecycle_manager.dart'; // Import AppLifecycleManager
 import 'package:provider/provider.dart'; // Added import
@@ -20,13 +23,20 @@ import './screens/provider_bookings_screen.dart'; // Import ProviderBookingsScre
 import './screens/booking_detail_screen.dart'; // Import BookingDetailScreen
 import './screens/admin_login_screen.dart'; // Import AdminLoginScreen
 import './screens/admin_dashboard_screen.dart'; // Import AdminDashboardScreen
+import './screens/admin_create_provider_screen.dart'; // Import AdminCreateProviderScreen
+import './screens/admin_booking_management_screen.dart'; // Import AdminBookingManagementScreen
+
 // import './screens/create_booking_screen.dart'; // Import CreateBookingScreen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize background service
-  await BackgroundService.initialize();
+  // Initialize background service with error handling
+  try {
+    await BackgroundService.initialize();
+  } catch (e) {
+    // Continue without background service if initialization fails
+  }
   
   runApp(const MyApp());
 }
@@ -62,14 +72,43 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (context) => AuthService()),
         ChangeNotifierProvider(create: (context) => ThemeService()),
+        ChangeNotifierProvider(create: (context) => LocaleService()),
       ],
-      child: Consumer<ThemeService>(builder: (context, themeService, child) {
-        return MaterialApp(
-          title: 'Service Marketplace',
-          theme: themeService.currentTheme,
-          initialRoute:
-              AuthCheckScreen.routeName, // Set AuthCheckScreen as initial route
-          home: const RoleSelectionScreen(), // Fallback home screen
+      child: Consumer2<ThemeService, LocaleService>(
+        builder: (context, themeService, localeService, child) {
+          // Ensure the app waits for locale to load
+          if (localeService.isLoading) {
+            return MaterialApp(
+              home: const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              ),
+            );
+          }
+          
+          return MaterialApp(
+            title: 'JO Service',
+            theme: themeService.currentTheme,
+            
+            // Internationalization configuration
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: LocaleService.supportedLocales,
+            locale: localeService.currentLocale,
+            
+            // RTL support
+            builder: (context, child) {
+              return Directionality(
+                textDirection: localeService.textDirection,
+                child: child!,
+              );
+            },
+            
+            initialRoute: AuthCheckScreen.routeName,
+            home: const RoleSelectionScreen(),
           onGenerateRoute: (settings) {
             switch (settings.name) {
               // Home route
@@ -125,6 +164,12 @@ class _MyAppState extends State<MyApp> {
               case AdminDashboardScreen.routeName: // Added AdminDashboardScreen route
                 return MaterialPageRoute(
                     builder: (_) => const AdminDashboardScreen());
+              case AdminCreateProviderScreen.routeName: // Added AdminCreateProviderScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const AdminCreateProviderScreen());
+              case AdminBookingManagementScreen.routeName: // Added AdminBookingManagementScreen route
+                return MaterialPageRoute(
+                    builder: (_) => const AdminBookingManagementScreen());
               case ProviderDetailScreen.routeName:
                 if (settings.arguments is String) {
                   final providerId = settings.arguments as String;

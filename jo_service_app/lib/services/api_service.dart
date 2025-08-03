@@ -39,9 +39,9 @@ class ApiService {
       // Running on the web
       return 'http://localhost:3000/api';
     } else if (Platform.isIOS) {
-      // iOS device - use Mac's local network IP
-      // If this doesn't work on simulator, change back to localhost
-      return 'http://10.46.6.119:3000/api';
+      // iOS device/simulator - use Mac's network IP
+      // This IP address should match your Mac's current network IP
+      return 'http://10.46.6.230:3000/api'; // Using network IP for iOS connectivity
     } else {
       // Android emulator
       return 'http://10.0.2.2:3000/api';
@@ -68,13 +68,11 @@ class ApiService {
       // Add a parameter telling the backend to do partial name matching
       searchParams['partialNameMatch'] = 'true';
 
-      print('Searching with partial name match for: $searchTerm');
     }
 
     // Add category filter if requested
     if (searchParams.containsKey('category') &&
         searchParams['category']!.isNotEmpty) {
-      print('Filtering by category: ${searchParams['category']}');
     }
 
     // Add location filter if requested
@@ -83,13 +81,11 @@ class ApiService {
       final location = searchParams['location']!;
       // Add cityFilter parameter for the backend
       searchParams['cityFilter'] = location;
-      print('Filtering by location: $location');
     }
 
     // Update the URI with all parameters
     uri = uri.replace(queryParameters: searchParams);
 
-    print('Searching providers with URI: $uri');
 
     final response = await http.get(uri);
 
@@ -247,13 +243,10 @@ class ApiService {
         final responseData = json.decode(response.body);
         return Provider.fromJson(responseData['provider']);
       } else {
-        print(
-            'Error uploading profile picture: ${response.statusCode} - ${response.body}');
         throw Exception(
             'Failed to upload profile picture: ${response.statusCode}');
       }
     } catch (e) {
-      print('Exception in uploadProfilePicture: $e');
       throw Exception('Failed to upload profile picture: $e');
     }
   }
@@ -339,13 +332,11 @@ class ApiService {
         final responseData = json.decode(response.body);
         return User.fromJson(responseData['user']);
       } else {
-        print(
-            'Error uploading profile picture: ${response.statusCode} - ${response.body}');
+        print('Error uploading profile picture: ${response.statusCode} - ${response.body}');
         throw Exception(
             'Failed to upload profile picture: ${response.statusCode}');
       }
     } catch (e) {
-      print('Exception in uploadUserProfilePicture: $e');
       throw Exception('Failed to upload profile picture: $e');
     }
   }
@@ -463,6 +454,145 @@ class ApiService {
     } else {
       final errorData = json.decode(response.body);
       throw Exception(errorData['message'] ?? 'Failed to fetch dashboard stats');
+    }
+  }
+
+  // Create provider account (Admin only)
+  Future<Provider> createProviderAccount(
+    String token,
+    Map<String, dynamic> providerData,
+  ) async {
+    final String baseUrl = getBaseUrl();
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/providers/create'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode(providerData),
+    );
+
+    if (response.statusCode == 201) {
+      final responseData = json.decode(response.body);
+      return Provider.fromJson(responseData['provider']);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to create provider account');
+    }
+  }
+
+  // ===== ADMIN BOOKING MANAGEMENT METHODS =====
+  
+  // Get all bookings for admin with filtering and pagination
+  Future<Map<String, dynamic>> getBookingsForAdmin(
+    String token,
+    Map<String, String?> filters,
+  ) async {
+    final String baseUrl = getBaseUrl();
+    
+    // Build query parameters
+    final queryParams = <String, String>{};
+    filters.forEach((key, value) {
+      if (value != null && value.isNotEmpty) {
+        queryParams[key] = value;
+      }
+    });
+    
+    final uri = Uri.parse('$baseUrl/admin/bookings').replace(
+      queryParameters: queryParams.isNotEmpty ? queryParams : null,
+    );
+    
+    final response = await http.get(
+      uri,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to fetch bookings');
+    }
+  }
+  
+  // Get booking analytics for admin
+  Future<Map<String, dynamic>> getBookingAnalytics(
+    String token,
+    Map<String, String> params,
+  ) async {
+    final String baseUrl = getBaseUrl();
+    
+    final uri = Uri.parse('$baseUrl/admin/bookings/analytics').replace(
+      queryParameters: params,
+    );
+    
+    final response = await http.get(
+      uri,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to fetch booking analytics');
+    }
+  }
+  
+  // Get booking activity feed for admin
+  Future<Map<String, dynamic>> getBookingActivityFeed(
+    String token,
+    Map<String, String> params,
+  ) async {
+    final String baseUrl = getBaseUrl();
+    
+    final uri = Uri.parse('$baseUrl/admin/bookings/activity-feed').replace(
+      queryParameters: params,
+    );
+    
+    final response = await http.get(
+      uri,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to fetch activity feed');
+    }
+  }
+  
+  // Get specific booking details for admin
+  Future<Map<String, dynamic>> getBookingDetailsForAdmin(
+    String token,
+    String bookingId,
+  ) async {
+    final String baseUrl = getBaseUrl();
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/bookings/$bookingId'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to fetch booking details');
     }
   }
 }

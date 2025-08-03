@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../services/theme_service.dart';
+import '../services/locale_service.dart';
 import '../services/booking_service.dart';
 import './role_selection_screen.dart';
 import './edit_provider_profile_screen.dart';
@@ -194,7 +197,6 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
         }
       }
 
-      print('Dashboard stats - Active: $activeCount, Completed this month: $completedThisMonth');
       
       // Check for new bookings
       bool hasNewBookings = false;
@@ -215,7 +217,6 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
         _previousCompletedThisMonth = completedThisMonth;
       }
     } catch (e) {
-      print('Error loading booking statistics: $e');
       if (mounted) {
         setState(() {
           _isLoadingStats = false;
@@ -233,6 +234,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
 
   void _showNewBookingNotification(int newBookingsCount) {
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -245,7 +247,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'You have $newBookingsCount new booking${newBookingsCount > 1 ? 's' : ''}!',
+                  l10n.newBookingNotification(newBookingsCount, newBookingsCount > 1 ? 's' : ''),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -261,7 +263,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
             borderRadius: BorderRadius.circular(12),
           ),
           action: SnackBarAction(
-            label: 'View',
+            label: l10n.view,
             textColor: Colors.white,
             onPressed: () => _navigateToBookings(context),
           ),
@@ -272,6 +274,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final authService = Provider.of<AuthService>(context, listen: false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -306,7 +309,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                           color: isDark ? Colors.white : const Color(0xFF1D1D1F),
                           letterSpacing: -0.5,
                         ),
-                        child: const Text('Dashboard'),
+                        child: Text(l10n.dashboard),
                       ),
                       background: Container(
                         decoration: BoxDecoration(
@@ -360,17 +363,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                                 if (_isAutoRefreshActive) {
                                   _startAutoRefresh();
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Auto-refresh enabled'),
-                                      duration: Duration(seconds: 2),
+                                    SnackBar(
+                                      content: Text(l10n.autoRefreshEnabled),
+                                      duration: const Duration(seconds: 2),
                                     ),
                                   );
                                 } else {
                                   _stopAutoRefresh();
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Auto-refresh disabled'),
-                                      duration: Duration(seconds: 2),
+                                    SnackBar(
+                                      content: Text(l10n.autoRefreshDisabled),
+                                      duration: const Duration(seconds: 2),
                                     ),
                                   );
                                 }
@@ -384,15 +387,67 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                           ],
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.translate,
+                          color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                          size: 24,
+                        ),
+                        onPressed: () async {
+                          final localeService = Provider.of<LocaleService>(context, listen: false);
+                          await localeService.toggleLocale();
+                          // Show a snackbar to confirm language change
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  localeService.currentLocale.languageCode == 'ar'
+                                      ? 'تم تغيير اللغة إلى العربية'
+                                      : 'Language changed to English',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ),
                       Container(
                         margin: const EdgeInsets.only(right: 16),
-                        child: IconButton(
+                        child: PopupMenuButton<String>(
                           icon: Icon(
-                            Icons.logout_rounded,
+                            Icons.more_vert_rounded,
                             color: isDark ? Colors.white : const Color(0xFF1D1D1F),
                             size: 24,
                           ),
-                          onPressed: () => _showLogoutDialog(context, authService),
+                          onSelected: (value) {
+                            if (value == 'logout') {
+                              _showLogoutDialog(context, authService);
+                            } else if (value == 'delete') {
+                              _showDeleteAccountDialog(context, authService);
+                            }
+                          },
+                          itemBuilder: (BuildContext context) => [
+                            PopupMenuItem<String>(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.logout_rounded, size: 20),
+                                  const SizedBox(width: 12),
+                                  Text(l10n.signOut),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.delete_forever_rounded, size: 20, color: Colors.red),
+                                  const SizedBox(width: 12),
+                                  Text(l10n.deleteAccount, style: const TextStyle(color: Colors.red)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -444,7 +499,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Welcome back!',
+                                      l10n.welcomeBack,
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -453,7 +508,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Ready to serve?',
+                                      l10n.readyToServe,
                                       style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.w700,
@@ -480,8 +535,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                           Expanded(
                             child: _buildStatCard(
                               context,
-                              'Active',
-                              'Bookings',
+                              l10n.pending,
+                                                              l10n.bookings,
                               Icons.schedule_rounded,
                               const Color(0xFF34C759),
                               isDark,
@@ -492,8 +547,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                           Expanded(
                             child: _buildStatCard(
                               context,
-                              'Completed',
-                              'This Month',
+                              l10n.completed,
+                              l10n.completedThisMonth,
                               Icons.check_circle_rounded,
                               const Color(0xFF007AFF),
                               isDark,
@@ -513,8 +568,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                         children: [
                           _buildActionCard(
                             context,
-                            'Manage Profile',
-                            'Update your services, rates, and availability',
+                            l10n.manageProfile,
+                                                          l10n.updateServicesRates,
                             Icons.person_outline_rounded,
                             const Color(0xFF007AFF),
                             () => _navigateToProfile(context),
@@ -523,8 +578,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                           const SizedBox(height: 16),
                           _buildActionCard(
                             context,
-                            'Manage Bookings',
-                            'View and respond to booking requests',
+                            l10n.manageBookings,
+                                                          l10n.viewRespondBookings,
                             Icons.calendar_today_rounded,
                             const Color(0xFF34C759),
                             () => _navigateToBookings(context),
@@ -533,8 +588,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                           const SizedBox(height: 16),
                           _buildActionCard(
                             context,
-                            'Messages',
-                            'View and respond to customer messages',
+                            l10n.messages,
+                                                          l10n.viewRespondMessages,
                             Icons.chat_bubble_outline_rounded,
                             const Color(0xFFFF9500),
                             () => _navigateToMessages(context),
@@ -779,6 +834,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   }
 
   void _showLogoutDialog(BuildContext context, AuthService authService) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -786,24 +842,24 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Text(
-            'Sign Out',
-            style: TextStyle(
+          title: Text(
+            l10n.signOut,
+            style: const TextStyle(
               fontWeight: FontWeight.w600,
             ),
           ),
-          content: const Text(
-            'Are you sure you want to sign out?',
-            style: TextStyle(
+          content: Text(
+            l10n.areYouSureSignOut,
+            style: const TextStyle(
               fontSize: 16,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
+              child: Text(
+                l10n.cancel,
+                style: const TextStyle(
                   color: Color(0xFF007AFF),
                   fontWeight: FontWeight.w600,
                 ),
@@ -820,9 +876,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                   (Route<dynamic> route) => false,
                 );
               },
-              child: const Text(
-                'Sign Out',
-                style: TextStyle(
+              child: Text(
+                l10n.signOut,
+                style: const TextStyle(
                   color: Color(0xFFFF3B30),
                   fontWeight: FontWeight.w600,
                 ),
@@ -832,5 +888,142 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
         );
       },
     );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, AuthService authService) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            l10n.deleteAccount,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFFFF3B30),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.deleteAccountConfirmation,
+                style: const TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning, color: Colors.red, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l10n.deleteAccountWarning,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                l10n.cancel,
+                style: const TextStyle(
+                  color: Color(0xFF007AFF),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _deleteAccount(context, authService);
+              },
+              child: Text(
+                l10n.delete,
+                style: const TextStyle(
+                  color: Color(0xFFFF3B30),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteAccount(BuildContext context, AuthService authService) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: const Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Deleting account...'),
+            ],
+          ),
+        ),
+      );
+      
+      await authService.deleteAccount();
+      
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.accountDeleted),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navigate to role selection screen
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const RoleSelectionScreen(),
+          ),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog if it's open
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.failedToDeleteAccount}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

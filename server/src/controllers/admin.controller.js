@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Provider = require('../models/provider.model');
 const User = require('../models/user.model');
+const Booking = require('../models/booking.model');
+const mongoose = require('mongoose');
 
 // Admin credentials (in production, store in database)
 const ADMIN_CREDENTIALS = {
@@ -138,8 +140,6 @@ const updateProviderStatus = async (req, res) => {
     const { providerId } = req.params;
     const { status, rejectionReason } = req.body;
 
-    console.log('Admin update provider status:', { providerId, status, rejectionReason });
-    console.log('Admin auth info:', req.auth);
 
     // Validate status
     const validStatuses = ['pending', 'verified', 'rejected'];
@@ -199,7 +199,7 @@ const updateProviderStatus = async (req, res) => {
     }
 
     // Log the status change for admin transparency
-    console.log(`🔄 Admin Status Change:`, {
+    console.log({
       providerId,
       providerName: updatedProvider.fullName || updatedProvider.companyName,
       previousStatus,
@@ -400,11 +400,606 @@ const bulkUpdateProviders = async (req, res) => {
   }
 };
 
+// Create provider (admin only)
+const createProvider = async (req, res) => {
+  try {
+    const {
+      fullName,
+      email,
+      password,
+      phoneNumber,
+      serviceType,
+      services,
+      businessName,
+      hourlyRate,
+      location,
+      availability,
+      description
+    } = req.body;
+
+    // Validate required fields
+    if (!fullName || !email || !password || !phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Full name, email, password, and phone number are required'
+      });
+    }
+
+    // Validate serviceType (required by Provider model)
+    let finalServiceType = serviceType;
+    if (!finalServiceType && services && Array.isArray(services) && services.length > 0) {
+      finalServiceType = services[0]; // Use first service from array if serviceType not provided
+    }
+    
+    if (!finalServiceType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Service type is required'
+      });
+    }
+
+    // Validate email domain
+    if (!email.endsWith('@joprovider.com')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Provider email must be from @joprovider.com domain'
+      });
+    }
+
+    // Check if provider already exists
+    const existingProvider = await Provider.findOne({ email });
+    if (existingProvider) {
+      return res.status(400).json({
+        success: false,
+        message: 'Provider with this email already exists'
+      });
+    }
+
+    // Create new provider
+    const provider = new Provider({
+      fullName,
+      email,
+      password,
+      phoneNumber,
+      serviceType: finalServiceType,
+      businessName: businessName || '',
+      hourlyRate: hourlyRate || 0,
+      location: location || {},
+      availability: availability || {},
+      serviceDescription: description || '',
+      verificationStatus: 'verified', // Admin-created providers are pre-verified
+      verifiedAt: new Date(),
+      verifiedBy: req.auth.userId || req.auth.email || 'admin'
+    });
+
+    await provider.save();
+
+    // Remove password from response
+    const providerResponse = provider.toObject();
+    delete providerResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: 'Provider created successfully',
+      data: providerResponse
+    });
+
+  } catch (error) {
+    console.error('Create provider error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create provider',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get all bookings with comprehensive filtering and monitoring
+ */
+const getAllBookings = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      providerId,
+      userId,
+      startDate,
+      endDate,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build query filters
+    const query = {};
+    
+    if (status) {
+      query.status = status;
+    }
+    
+    if (providerId && mongoose.Types.ObjectId.isValid(providerId)) {
+      query.provider = new mongoose.Types.ObjectId(providerId);
+    }
+    
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      query.user = new mongoose.Types.ObjectId(userId);
+    }
+    
+    // Date range filter
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Pagination options
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
+      populate: [
+        {
+          path: 'user',
+          select: 'fullName email phoneNumber profilePictureUrl createdAt'
+        },
+        {
+          path: 'provider',
+          select: 'fullName email phoneNumber businessName serviceType averageRating totalRatings profilePictureUrl verificationStatus'
+        }
+      ]
+    };
+
+    // Get bookings with pagination
+    const bookings = await Booking.find(query)
+      .populate(options.populate)
+      .sort(options.sort)
+      .limit(options.limit * 1)
+      .skip((options.page - 1) * options.limit)
+      .exec();
+
+    // Get total count for pagination
+    const totalBookings = await Booking.countDocuments(query);
+
+    // Get booking statistics
+    const stats = await Booking.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const statusStats = {};
+    stats.forEach(stat => {
+      statusStats[stat._id] = stat.count;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        bookings,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalBookings / options.limit),
+          totalBookings,
+          hasNext: page < Math.ceil(totalBookings / options.limit),
+          hasPrev: page > 1
+        },
+        statistics: {
+          statusBreakdown: statusStats,
+          totalBookings
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching bookings for admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch bookings',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get detailed booking analytics and insights
+ */
+const getBookingAnalytics = async (req, res) => {
+  try {
+    const { timeframe = '30d' } = req.query;
+    
+    // Calculate date range based on timeframe
+    let startDate = new Date();
+    switch (timeframe) {
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 30);
+    }
+
+    // Get booking trends over time
+    const bookingTrends = await Booking.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            status: '$status'
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.date': 1 }
+      }
+    ]);
+
+    // Get provider performance metrics
+    const providerMetrics = await Booking.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$provider',
+          totalBookings: { $sum: 1 },
+          acceptedBookings: {
+            $sum: { $cond: [{ $eq: ['$status', 'accepted'] }, 1, 0] }
+          },
+          completedBookings: {
+            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
+          },
+          cancelledBookings: {
+            $sum: { $cond: [{ $eq: ['$status', 'cancelled_by_user'] }, 1, 0] }
+          },
+          declinedBookings: {
+            $sum: { $cond: [{ $eq: ['$status', 'declined_by_provider'] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'providers',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'providerInfo'
+        }
+      },
+      {
+        $unwind: '$providerInfo'
+      },
+      {
+        $addFields: {
+          acceptanceRate: {
+            $cond: [
+              { $gt: ['$totalBookings', 0] },
+              { $multiply: [{ $divide: ['$acceptedBookings', '$totalBookings'] }, 100] },
+              0
+            ]
+          },
+          completionRate: {
+            $cond: [
+              { $gt: ['$acceptedBookings', 0] },
+              { $multiply: [{ $divide: ['$completedBookings', '$acceptedBookings'] }, 100] },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $sort: { totalBookings: -1 }
+      },
+      {
+        $limit: 10
+      }
+    ]);
+
+    // Get user activity metrics
+    const userMetrics = await Booking.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$user',
+          totalBookings: { $sum: 1 },
+          completedBookings: {
+            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
+          },
+          cancelledBookings: {
+            $sum: { $cond: [{ $eq: ['$status', 'cancelled_by_user'] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      {
+        $unwind: '$userInfo'
+      },
+      {
+        $sort: { totalBookings: -1 }
+      },
+      {
+        $limit: 10
+      }
+    ]);
+
+    // Get overall statistics
+    const overallStats = await Booking.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          avgResponseTime: { $avg: { $subtract: ['$updatedAt', '$createdAt'] } },
+          statusBreakdown: {
+            $push: '$status'
+          }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        timeframe,
+        bookingTrends,
+        providerMetrics,
+        userMetrics,
+        overallStats: overallStats[0] || {}
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching booking analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch booking analytics',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get booking activity feed (real-time monitoring)
+ */
+const getBookingActivityFeed = async (req, res) => {
+  try {
+    const { limit = 50 } = req.query;
+
+    // Get recent booking activities (status changes, new bookings, etc.)
+    const recentBookings = await Booking.find({})
+      .populate('user', 'fullName email')
+      .populate('provider', 'fullName email serviceType')
+      .sort({ updatedAt: -1 })
+      .limit(parseInt(limit))
+      .exec();
+
+    // Transform data for activity feed
+    const activityFeed = recentBookings.map(booking => {
+      const timeSinceUpdate = Date.now() - booking.updatedAt.getTime();
+      const isRecent = timeSinceUpdate < 3600000; // Less than 1 hour
+      
+      return {
+        id: booking._id,
+        type: 'booking_status_change',
+        status: booking.status,
+        timestamp: booking.updatedAt,
+        isRecent,
+        user: {
+          id: booking.user._id,
+          name: booking.user.fullName,
+          email: booking.user.email
+        },
+        provider: {
+          id: booking.provider._id,
+          name: booking.provider.fullName,
+          email: booking.provider.email,
+          serviceType: booking.provider.serviceType
+        },
+        serviceDateTime: booking.serviceDateTime,
+        createdAt: booking.createdAt,
+        description: generateActivityDescription(booking)
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        activities: activityFeed,
+        totalCount: activityFeed.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching booking activity feed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity feed',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get specific booking details for admin review
+ */
+const getBookingDetails = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid booking ID format'
+      });
+    }
+
+    const booking = await Booking.findById(bookingId)
+      .populate({
+        path: 'user',
+        select: 'fullName email phoneNumber profilePictureUrl createdAt'
+      })
+      .populate({
+        path: 'provider',
+        select: 'fullName email phoneNumber businessName serviceType serviceDescription hourlyRate averageRating totalRatings profilePictureUrl verificationStatus location'
+      })
+      .exec();
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Get related messages/chat history if needed
+    const Message = require('../models/message.model');
+    const conversationId = [booking.user._id, booking.provider._id].sort().join('_');
+    
+    const messages = await Message.find({ conversationId })
+      .sort({ timestamp: 1 })
+      .limit(20)
+      .exec();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        booking,
+        messages,
+        timeline: generateBookingTimeline(booking)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching booking details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch booking details',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Helper function to generate activity descriptions
+ */
+function generateActivityDescription(booking) {
+  const userName = booking.user.fullName;
+  const providerName = booking.provider.fullName;
+  const serviceType = booking.provider.serviceType;
+  
+  switch (booking.status) {
+    case 'pending':
+      return `${userName} requested ${serviceType} service from ${providerName}`;
+    case 'accepted':
+      return `${providerName} accepted ${userName}'s ${serviceType} booking`;
+    case 'declined_by_provider':
+      return `${providerName} declined ${userName}'s ${serviceType} booking`;
+    case 'cancelled_by_user':
+      return `${userName} cancelled their ${serviceType} booking with ${providerName}`;
+    case 'in_progress':
+      return `${serviceType} service started between ${userName} and ${providerName}`;
+    case 'completed':
+      return `${serviceType} service completed between ${userName} and ${providerName}`;
+    default:
+      return `Booking status updated to ${booking.status}`;
+  }
+}
+
+/**
+ * Helper function to generate booking timeline
+ */
+function generateBookingTimeline(booking) {
+  const timeline = [
+    {
+      status: 'pending',
+      timestamp: booking.createdAt,
+      description: 'Booking request created',
+      isCompleted: true
+    }
+  ];
+
+  // Add current status if different from pending
+  if (booking.status !== 'pending') {
+    timeline.push({
+      status: booking.status,
+      timestamp: booking.updatedAt,
+      description: generateStatusDescription(booking.status),
+      isCompleted: true
+    });
+  }
+
+  return timeline;
+}
+
+/**
+ * Helper function to generate status descriptions
+ */
+function generateStatusDescription(status) {
+  switch (status) {
+    case 'accepted':
+      return 'Provider accepted the booking';
+    case 'declined_by_provider':
+      return 'Provider declined the booking';
+    case 'cancelled_by_user':
+      return 'User cancelled the booking';
+    case 'in_progress':
+      return 'Service is in progress';
+    case 'completed':
+      return 'Service completed successfully';
+    default:
+      return `Status changed to ${status}`;
+  }
+}
+
 module.exports = {
   adminLogin,
   getAllProviders,
   updateProviderStatus,
   getProviderById,
   getDashboardStats,
-  bulkUpdateProviders
-}; 
+  bulkUpdateProviders,
+  createProvider,
+  // New booking management functions
+  getAllBookings,
+  getBookingAnalytics,
+  getBookingActivityFeed,
+  getBookingDetails
+};

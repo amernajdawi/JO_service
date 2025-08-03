@@ -42,10 +42,9 @@ const isProvider = (req, res, next) => {
     }
 };
 
-// Middleware to check for admin role (placeholder for now)
+// Middleware to check for admin role
 const isAdmin = (req, res, next) => {
-    // Assuming admin status might be part of the token payload or checked against a database field
-    if (req.auth && req.auth.isAdmin) { // Or req.auth.type === 'admin' if you have such a type
+    if (req.auth && req.auth.role === 'admin') {
         next();
     } else {
         return res.status(403).json({ message: 'Forbidden: Admin access required' });

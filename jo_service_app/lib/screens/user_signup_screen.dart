@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../constants/theme.dart';
 import '../widgets/uber_input.dart'; // Use the new UberInput widget
@@ -116,6 +117,7 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(

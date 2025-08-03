@@ -60,7 +60,6 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
         });
       }
     } catch (e) {
-      print('Error loading conversations: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load conversations: $e')),

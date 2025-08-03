@@ -423,7 +423,6 @@ class _LocationPickerState extends State<LocationPicker> {
             'crossOrigin': 'anonymous',
           },
           errorTileCallback: (tile, error, stackTrace) {
-            print('Error loading tile: $error');
           },
           // Fallback to alternative tile servers if needed
           fallbackUrl: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
