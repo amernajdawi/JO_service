@@ -32,13 +32,13 @@ class ChatService {
     // Determine WebSocket URL based on platform
     String wsBaseUrl;
     if (kIsWeb) {
-      wsBaseUrl = 'ws://localhost:3000'; // Use ws:// for web
+      wsBaseUrl = 'ws://localhost:3001'; // Use ws:// for web
     } else if (Platform.isIOS) {
       // iOS device or simulator - use Mac's IP address
-      wsBaseUrl = 'ws://10.46.6.230:3000';
+              wsBaseUrl = 'ws://10.46.6.68:3001';
     } else {
       // Android emulator
-      wsBaseUrl = 'ws://10.0.2.2:3000';
+              wsBaseUrl = 'ws://10.0.2.2:3001';
     }
 
     final url =

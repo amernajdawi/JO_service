@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import './role_selection_screen.dart';
+import './user_login_screen.dart';
 import './user_home_screen.dart';
 import './provider_dashboard_screen.dart';
 
@@ -29,8 +29,8 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
     // This is important because AuthService might notify listeners
     // during its initialization, and we need the context to be ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Navigate directly to the RoleSelectionScreen for now
-      Navigator.of(context).pushReplacementNamed(RoleSelectionScreen.routeName);
+      // Navigate directly to the UserLoginScreen for now
+      Navigator.of(context).pushReplacementNamed(UserLoginScreen.routeName);
 
       // Uncomment this when you want to implement the full auth flow
       // _checkAuthStatusAndNavigate();
@@ -72,10 +72,10 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
       } else {
         // Should not happen if userType is always set on login
         Navigator.of(context)
-            .pushReplacementNamed(RoleSelectionScreen.routeName);
+            .pushReplacementNamed(UserLoginScreen.routeName);
       }
     } else {
-      Navigator.of(context).pushReplacementNamed(RoleSelectionScreen.routeName);
+      Navigator.of(context).pushReplacementNamed(UserLoginScreen.routeName);
     }
   }
 

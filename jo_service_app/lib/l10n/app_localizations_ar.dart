@@ -117,7 +117,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get about => 'حول';
 
   @override
-  String get services => 'الخدمات';
+  String get services => 'الخدمات (مفصولة بفواصل)';
 
   @override
   String get reviews => 'التقييمات';
@@ -126,7 +126,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get availability => 'المواعيد المتاحة';
 
   @override
-  String get hourlyRate => 'السعر بالساعة';
+  String get hourlyRate => 'المعدل الساعي (\$)';
 
   @override
   String get rating => 'التقييم';
@@ -273,6 +273,68 @@ class AppLocalizationsAr extends AppLocalizations {
   String get punctuality => 'الالتزام بالوقت';
 
   @override
+  String get notificationSettings => 'إعدادات الإشعارات';
+
+  @override
+  String get notificationPreferences => 'تفضيلات الإشعارات';
+
+  @override
+  String get notificationPreferencesDescription =>
+      'اختر الإشعارات التي تريد استلامها';
+
+  @override
+  String get bookingUpdates => 'تحديثات الحجز';
+
+  @override
+  String get bookingUpdatesDescription =>
+      'استلام إشعارات حول تغييرات حالة الحجز';
+
+  @override
+  String get chatMessages => 'رسائل المحادثة';
+
+  @override
+  String get chatMessagesDescription => 'استلام إشعارات للرسائل الجديدة';
+
+  @override
+  String get ratings => 'التقييمات';
+
+  @override
+  String get ratingsDescription =>
+      'استلام إشعارات للتقييمات والمراجعات الجديدة';
+
+  @override
+  String get promotions => 'العروض الترويجية';
+
+  @override
+  String get promotionsDescription =>
+      'استلام إشعارات حول العروض الخاصة والترويجية';
+
+  @override
+  String get saveSettings => 'حفظ الإعدادات';
+
+  @override
+  String get testNotificationSent => 'تم إرسال إشعار الاختبار بنجاح';
+
+  @override
+  String get errorSendingTestNotification => 'خطأ في إرسال إشعار الاختبار';
+
+  @override
+  String get settingsSaved => 'تم حفظ الإعدادات بنجاح';
+
+  @override
+  String get errorSavingSettings => 'خطأ في حفظ الإعدادات';
+
+  @override
+  String get sendTestNotification => 'إرسال إشعار اختبار';
+
+  @override
+  String get notificationInfo => 'معلومات الإشعارات';
+
+  @override
+  String get notificationInfoDescription =>
+      'يمكنك التحكم في الإشعارات التي تستلمها. تعطيل الإشعارات قد يجعلك تفوت التحديثات المهمة حول حجوزاتك ورسائلك.';
+
+  @override
   String get workQuality => 'جودة العمل';
 
   @override
@@ -373,6 +435,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get verifyProvider => 'اعتماد مقدم الخدمة';
+
+  @override
+  String get resendVerification => 'إعادة إرسال التحقق';
+
+  @override
+  String get resendVerificationEmail => 'إعادة إرسال بريد التحقق';
+
+  @override
+  String get verificationEmailSent => 'تم إرسال بريد التحقق!';
+
+  @override
+  String get accountNotVerified => 'الحساب غير محقق';
+
+  @override
+  String get pleaseVerifyAccount =>
+      'يرجى التحقق من بريدك الإلكتروني ورقم هاتفك قبل تسجيل الدخول.';
+
+  @override
+  String get verifyAccount => 'التحقق من الحساب';
 
   @override
   String get rejectProvider => 'رفض مقدم الخدمة';
@@ -569,7 +650,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirmPasswordRequired => 'يرجى تأكيد كلمة المرور';
 
   @override
-  String get hourlyRateRequired => 'السعر بالساعة مطلوب';
+  String get hourlyRateRequired => 'المعدل الساعي مطلوب';
 
   @override
   String get enterValidRate => 'أدخل سعر صحيح';
@@ -678,7 +759,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String chatWith(String name) {
-    return 'محادثة مع $name';
+    return 'محادثة مع';
   }
 
   @override
@@ -719,6 +800,72 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get areYouSureCancelBooking => 'هل أنت متأكد من إلغاء هذا الحجز؟';
+
+  @override
+  String get advancedSearch => 'البحث المتقدم';
+
+  @override
+  String get filters => 'المرشحات';
+
+  @override
+  String get clearAll => 'مسح الكل';
+
+  @override
+  String get category => 'الفئة';
+
+  @override
+  String get minimumRating => 'التقييم الأدنى';
+
+  @override
+  String get maxPrice => 'السعر الأقصى';
+
+  @override
+  String get maxDistance => 'المسافة القصوى';
+
+  @override
+  String get onlyAvailable => 'المتاح فقط';
+
+  @override
+  String get serviceTags => 'علامات الخدمة';
+
+  @override
+  String get sortBy => 'ترتيب حسب';
+
+  @override
+  String get order => 'الترتيب';
+
+  @override
+  String get ascending => 'تصاعدي';
+
+  @override
+  String get descending => 'تنازلي';
+
+  @override
+  String get price => 'السعر';
+
+  @override
+  String get distance => 'المسافة';
+
+  @override
+  String get results => 'النتائج';
+
+  @override
+  String get page => 'الصفحة';
+
+  @override
+  String get searching => 'جاري البحث...';
+
+  @override
+  String get tryAdjustingFilters => 'حاول تعديل المرشحات';
+
+  @override
+  String get searchProviders => 'البحث عن مقدمي الخدمات';
+
+  @override
+  String get useMyLocation => 'استخدم موقعي';
+
+  @override
+  String get locationNotAvailable => 'الموقع غير متاح';
 
   @override
   String get unknownStatus => 'غير معروف';
@@ -811,7 +958,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noMessagesYet => 'لا توجد رسائل بعد';
 
   @override
-  String get startConversation => 'ابدأ محادثة مع مقدمي الخدمة';
+  String get startConversation => 'بدء المحادثة';
 
   @override
   String get searchMessages => 'البحث في الرسائل';
@@ -1102,7 +1249,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get profilePictureUploadedSuccessfully =>
-      'تم تحميل صورة الملف الشخصي بنجاح!';
+      'تم رفع صورة الملف الشخصي بنجاح!';
 
   @override
   String get failedToUploadProfilePicture => 'فشل في تحميل صورة الملف الشخصي';
@@ -1189,4 +1336,371 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deletingAccount => 'جاري حذف الحساب...';
+
+  @override
+  String get languageChanged => 'تم تغيير اللغة بنجاح';
+
+  @override
+  String get refresh => 'تحديث';
+
+  @override
+  String get authenticationTokenMissing => 'رمز المصادقة مفقود';
+
+  @override
+  String get failedToLoadConversations => 'فشل في تحميل المحادثات';
+
+  @override
+  String get errorUploadingProfilePicture => 'خطأ في رفع صورة الملف الشخصي';
+
+  @override
+  String get errorUpdatingProfile => 'خطأ في تحديث الملف الشخصي';
+
+  @override
+  String get failedToOpenNavigation => 'فشل في فتح الملاحة';
+
+  @override
+  String bookingStatusUpdatedTo(String status) {
+    return 'تم تحديث حالة الحجز إلى $status';
+  }
+
+  @override
+  String get errorUpdatingBookingStatus => 'خطأ في تحديث حالة الحجز';
+
+  @override
+  String get editProfileAuthenticationError =>
+      'خطأ في المصادقة. يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String editProfileErrorLoading(String error) {
+    return 'خطأ في تحميل الملف الشخصي: $error';
+  }
+
+  @override
+  String get editProfileImageUploadWebNotSupported =>
+      'تحميل الصور غير مدعوم في الويب. يرجى استخدام التطبيق المحمول.';
+
+  @override
+  String editProfileErrorPickingImage(String error) {
+    return 'خطأ في اختيار الصورة: $error';
+  }
+
+  @override
+  String get editProfileCameraWebNotSupported =>
+      'الكاميرا غير مدعومة في الويب. يرجى استخدام التطبيق المحمول.';
+
+  @override
+  String editProfileErrorTakingPhoto(String error) {
+    return 'خطأ في التقاط الصورة: $error';
+  }
+
+  @override
+  String get editProfileBusinessProfile => 'الملف الشخصي للأعمال';
+
+  @override
+  String get editProfileUpdateBusinessInfo => 'قم بتحديث معلومات عملك وصورتك';
+
+  @override
+  String get editProfileUploadPhoto => 'تحميل صورة';
+
+  @override
+  String get editProfileBusinessName => 'اسم العمل';
+
+  @override
+  String get editProfileBusinessNameRequired => 'اسم العمل مطلوب';
+
+  @override
+  String get editProfileDescription => 'الوصف';
+
+  @override
+  String get editProfileDescriptionRequired => 'الوصف مطلوب';
+
+  @override
+  String get editProfileServices => 'الخدمات (مفصولة بفواصل)';
+
+  @override
+  String get editProfileServicesRequired => 'الخدمات مطلوبة';
+
+  @override
+  String get editProfileHourlyRate => 'المعدل الساعي (\$)';
+
+  @override
+  String get editProfileHourlyRateRequired => 'المعدل الساعي مطلوب';
+
+  @override
+  String get editProfileEnterValidNumber => 'يرجى إدخال رقم صحيح';
+
+  @override
+  String get editProfilePhoneNumber => 'رقم الهاتف';
+
+  @override
+  String get editProfilePhoneRequired => 'رقم الهاتف مطلوب';
+
+  @override
+  String get editProfileAddress => 'العنوان';
+
+  @override
+  String get editProfileAddressRequired => 'العنوان مطلوب';
+
+  @override
+  String get editProfileSaveChanges => 'حفظ التغييرات';
+
+  @override
+  String get nowAvailable => 'You are now available for bookings';
+
+  @override
+  String get nowUnavailable => 'You are now unavailable for bookings';
+
+  @override
+  String get availabilityStatus => 'حالة التوفر';
+
+  @override
+  String get availableForBookings => 'You are available for new bookings';
+
+  @override
+  String get currentlyUnavailable => 'You are currently unavailable';
+
+  @override
+  String get providerBookingsTitle => 'إدارة الحجوزات';
+
+  @override
+  String get allBookings => 'جميع الحجوزات';
+
+  @override
+  String get pendingBookings => 'قيد الانتظار';
+
+  @override
+  String get acceptedBookings => 'مقبولة';
+
+  @override
+  String get inProgressBookings => 'قيد التنفيذ';
+
+  @override
+  String get completedBookings => 'مكتملة';
+
+  @override
+  String get cancelledBookings => 'ملغية';
+
+  @override
+  String get rejectedBookings => 'مرفوضة';
+
+  @override
+  String get noBookingsMessage => 'لم يتم العثور على حجوزات لهذا الفلتر';
+
+  @override
+  String get loadingBookings => 'جاري تحميل الحجوزات...';
+
+  @override
+  String get refreshBookings => 'تحديث الحجوزات';
+
+  @override
+  String newBookingsReceived(int count) {
+    return 'تم استلام $count حجز جديد!';
+  }
+
+  @override
+  String get bookingFrom => 'حجز من';
+
+  @override
+  String get requestedOn => 'تم الطلب في';
+
+  @override
+  String get scheduledFor => 'مجدول لـ';
+
+  @override
+  String get estimatedDuration => 'المدة المقدرة';
+
+  @override
+  String get totalAmount => 'المبلغ الإجمالي';
+
+  @override
+  String get rejectBooking => 'رفض الحجز';
+
+  @override
+  String get markInProgress => 'بدء العمل';
+
+  @override
+  String get markCompleted => 'إتمام العمل';
+
+  @override
+  String get bookingAccepted => 'تم قبول الحجز';
+
+  @override
+  String get bookingRejected => 'تم رفض الحجز';
+
+  @override
+  String get bookingMarkedInProgress => 'تم بدء العمل';
+
+  @override
+  String get bookingMarkedCompleted => 'تم إتمام العمل';
+
+  @override
+  String get errorUpdatingBooking => 'خطأ في تحديث الحجز';
+
+  @override
+  String get loadMore => 'تحميل المزيد';
+
+  @override
+  String get noMoreBookings => 'لا توجد حجوزات أخرى';
+
+  @override
+  String get providerMessagesTitle => 'الرسائل';
+
+  @override
+  String get conversations => 'المحادثات';
+
+  @override
+  String get noConversationsFound => 'لا توجد محادثات';
+
+  @override
+  String get noConversationsMessage =>
+      'لم تبدأ أي محادثات بعد. ستظهر رسائل العملاء هنا.';
+
+  @override
+  String get loadingConversations => 'جاري تحميل المحادثات...';
+
+  @override
+  String get errorLoadingConversations => 'خطأ في تحميل المحادثات';
+
+  @override
+  String get lastMessage => 'آخر رسالة';
+
+  @override
+  String get newMessage => 'رسالة جديدة';
+
+  @override
+  String get unreadMessages => 'رسائل غير مقروءة';
+
+  @override
+  String get openChat => 'فتح المحادثة';
+
+  @override
+  String get messagePreview => 'معاينة الرسالة';
+
+  @override
+  String get editProviderProfileTitle => 'تعديل الملف الشخصي';
+
+  @override
+  String get businessProfile => 'الملف الشخصي للأعمال';
+
+  @override
+  String get updateBusinessInfo => 'قم بتحديث معلومات عملك وصورتك';
+
+  @override
+  String get uploadPhoto => 'تحميل صورة';
+
+  @override
+  String get businessName => 'اسم العمل';
+
+  @override
+  String get businessNameRequired => 'اسم العمل مطلوب';
+
+  @override
+  String get descriptionRequired => 'الوصف مطلوب';
+
+  @override
+  String get servicesRequired => 'الخدمات مطلوبة';
+
+  @override
+  String get enterValidNumber => 'يرجى إدخال رقم صحيح';
+
+  @override
+  String get phoneRequired => 'رقم الهاتف مطلوب';
+
+  @override
+  String get addressRequired => 'العنوان مطلوب';
+
+  @override
+  String get saveChanges => 'حفظ التغييرات';
+
+  @override
+  String get imageUploadWebNotSupported =>
+      'تحميل الصور غير مدعوم في الويب. يرجى استخدام التطبيق المحمول.';
+
+  @override
+  String get cameraWebNotSupported =>
+      'الكاميرا غير مدعومة في الويب. يرجى استخدام التطبيق المحمول.';
+
+  @override
+  String get errorTakingPhoto => 'خطأ في التقاط الصورة';
+
+  @override
+  String get openInGoogleMaps => 'فتح في خرائط جوجل';
+
+  @override
+  String get accept => 'قبول';
+
+  @override
+  String get decline => 'رفض';
+
+  @override
+  String get errorLoadingBookingDetails => 'خطأ في تحميل تفاصيل الحجز';
+
+  @override
+  String get providerInformationNotAvailable => 'معلومات المزود غير متوفرة';
+
+  @override
+  String get pleaseSelectRating => 'يرجى اختيار تقييم';
+
+  @override
+  String get ratingSubmittedSuccessfully => 'تم إرسال التقييم بنجاح';
+
+  @override
+  String get errorSubmittingRating => 'خطأ في إرسال التقييم';
+
+  @override
+  String confirmAction(String action) {
+    return 'تأكيد $action';
+  }
+
+  @override
+  String areYouSureActionBooking(String action) {
+    return 'هل أنت متأكد من $action هذا الحجز؟';
+  }
+
+  @override
+  String bookingActionSuccessfully(String action) {
+    return 'تم $action الحجز بنجاح.';
+  }
+
+  @override
+  String get markedAsInProgress => 'محدد كقيد التنفيذ';
+
+  @override
+  String get markedAsCompleted => 'محدد كمكتمل';
+
+  @override
+  String get updated => 'محدث';
+
+  @override
+  String get cancelledByUser => 'ملغي من قبل المستخدم';
+
+  @override
+  String get cancelledByProvider => 'ملغي من قبل المزود';
+
+  @override
+  String get declinedByProvider => 'مرفوض من قبل المزود';
+
+  @override
+  String get providerStatusUpdatedTo => 'تم تحديث حالة المزود إلى';
+
+  @override
+  String get selectLocation => 'اختر الموقع';
+
+  @override
+  String get locationPickerTitle => 'اختر موقعك';
+
+  @override
+  String get locationPickerSubtitle => 'انقر على الخريطة لتعيين موقعك الدقيق';
+
+  @override
+  String get currentLocation => 'الموقع الحالي';
+
+  @override
+  String get searchLocation => 'البحث عن موقع';
+
+  @override
+  String get locationSelected => 'تم اختيار الموقع بنجاح';
+
+  @override
+  String get locationError => 'خطأ في الحصول على الموقع';
 }

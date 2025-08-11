@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/provider_model.dart';
 import '../models/chat_message.model.dart';
 import '../models/user_model.dart';
+import 'auth_service.dart';
 
 // New class to model the response from fetching a list of providers
 class ProviderListResponse {
@@ -37,18 +38,84 @@ class ApiService {
   static String getBaseUrl() {
     if (kIsWeb) {
       // Running on the web
-      return 'http://localhost:3000/api';
+      return 'http://localhost:3001/api';
     } else if (Platform.isIOS) {
       // iOS device/simulator - use Mac's network IP
       // This IP address should match your Mac's current network IP
-      return 'http://10.46.6.230:3000/api'; // Using network IP for iOS connectivity
+      return 'http://10.46.6.68:3001/api'; // Using network IP for iOS connectivity
     } else {
       // Android emulator
-      return 'http://10.0.2.2:3000/api';
+      return 'http://10.0.2.2:3001/api';
     }
   }
 
-  // static const String _baseUrl = 'http://10.0.2.2:3000/api'; // Old static way
+  // static const String _baseUrl = 'http://10.0.2.2:3001/api'; // Old static way
+
+  // Generic HTTP methods for API calls
+  Future<Map<String, dynamic>> get(String endpoint) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.get(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: await _getHeaders(),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.post(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: await _getHeaders(),
+      body: jsonEncode(data),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> put(String endpoint, Map<String, dynamic> data) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.put(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: await _getHeaders(),
+      body: jsonEncode(data),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> delete(String endpoint) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.delete(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: await _getHeaders(),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> patch(String endpoint, Map<String, dynamic> data) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.patch(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: await _getHeaders(),
+      body: jsonEncode(data),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, String>> _getHeaders() async {
+    final authService = AuthService();
+    final token = await authService.getToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  Map<String, dynamic> _handleResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    }
+  }
 
   // Updated to accept query parameters and return ProviderListResponse
   Future<ProviderListResponse> fetchProviders(
@@ -95,6 +162,33 @@ class ApiService {
     } else {
       throw Exception(
         'Failed to load providers (Status Code: ${response.statusCode}, Body: ${response.body})',
+      );
+    }
+  }
+
+  // Advanced search method for comprehensive filtering
+  Future<ProviderListResponse> searchProviders(
+      Map<String, String>? queryParams) async {
+    final String baseUrl = getBaseUrl();
+    Uri uri = Uri.parse('$baseUrl/providers/search');
+
+    // Prepare search parameters
+    final Map<String, String> searchParams = queryParams ?? {};
+
+    // Remove empty parameters
+    searchParams.removeWhere((key, value) => value.isEmpty);
+
+    // Update the URI with all parameters
+    uri = uri.replace(queryParameters: searchParams);
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      // The backend returns an object like { providers: [], currentPage: ..., ... }
+      return ProviderListResponse.fromJson(json.decode(response.body));
+    } else {
+      throw Exception(
+        'Failed to search providers (Status Code: ${response.statusCode}, Body: ${response.body})',
       );
     }
   }
@@ -593,6 +687,62 @@ class ApiService {
     } else {
       final errorData = json.decode(response.body);
       throw Exception(errorData['message'] ?? 'Failed to fetch booking details');
+    }
+  }
+
+  // ===== PROVIDER AVAILABILITY METHODS =====
+  
+  /// Update provider availability status using the dedicated availability endpoint
+  Future<Provider> updateProviderAvailability(String token, bool isAvailable) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.patch(
+      Uri.parse('$baseUrl/providers/availability'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'isAvailable': isAvailable,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      if (responseData['provider'] != null) {
+        return Provider.fromJson(responseData['provider']);
+      } else {
+        throw Exception('Failed to parse provider data from availability update response.');
+      }
+    } else {
+      throw Exception(
+          'Failed to update provider availability (Status Code: ${response.statusCode}, Body: ${response.body})');
+    }
+  }
+  
+  /// Update provider availability status via the profile update endpoint
+  Future<Provider> updateProviderAvailabilityViaProfile(String token, bool isAvailable) async {
+    return await updateMyProviderProfile(token, {
+      'isAvailable': isAvailable,
+    });
+  }
+
+  /// Update provider location using the dedicated location endpoint
+  Future<Map<String, dynamic>> updateProviderLocation(String token, Map<String, dynamic> locationData) async {
+    final String baseUrl = getBaseUrl();
+    final response = await http.patch(
+      Uri.parse('$baseUrl/providers/update-location'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(locationData),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to update provider location');
     }
   }
 }

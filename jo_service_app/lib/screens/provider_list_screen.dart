@@ -5,8 +5,9 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../constants/theme.dart';
 import './provider_signup_screen.dart';
-import './role_selection_screen.dart';
+import './user_login_screen.dart';
 import './provider_detail_screen.dart';
+import './advanced_search_screen.dart';
 import '../l10n/app_localizations.dart';
 import '../utils/service_type_localizer.dart';
 import 'dart:convert';
@@ -35,6 +36,15 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
   String _selectedLocation = '';
+  double? _selectedLatitude;
+  double? _selectedLongitude;
+  double _minRating = 0.0;
+  double _maxPrice = 1000.0;
+  double _maxDistance = 50.0;
+  bool _onlyAvailable = false;
+  List<String> _selectedTags = [];
+  String _sortBy = 'rating';
+  String _sortOrder = 'desc';
 
   List<Map<String, dynamic>> _getCategories(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -120,29 +130,34 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
       }
     }
 
+    // Skip backend category filtering for now - we'll do it client-side
+    // This ensures we get all providers and can filter them properly
     // Add category filter if not "All"
-    if (_selectedCategory != 'All') {
-      // Map category names to match backend expectations
-      String categoryParam = _selectedCategory;
-      switch (_selectedCategory) {
-        case 'Electrical':
-          categoryParam = 'Electrician';
-          break;
-        case 'Plumbing':
-          categoryParam = 'Plumber';
-          break;
-        case 'Cleaning':
-          categoryParam = 'Cleaner';
-          break;
-        case 'Gardening':
-          categoryParam = 'Gardener';
-          break;
-        case 'Painting':
-          categoryParam = 'Painter';
-          break;
-      }
-      queryParams['serviceType'] = categoryParam;
-    }
+    // if (_selectedCategory != 'All') {
+    //   // Try multiple variations of the service type for backend compatibility
+    //   String categoryParam = _selectedCategory;
+    //   switch (_selectedCategory) {
+    //     case 'Electrical':
+    //       categoryParam = 'Electrician';
+    //       break;
+    //     case 'Plumbing':
+    //       categoryParam = 'Plumber';
+    //       break;
+    //     case 'Cleaning':
+    //       categoryParam = 'Cleaner';
+    //       break;
+    //     case 'Gardening':
+    //       categoryParam = 'Gardener';
+    //       break;
+    //     case 'Painting':
+    //       categoryParam = 'Painter';
+    //       break;
+    //     case 'Carpentry':
+    //       categoryParam = 'Carpenter';
+    //       break;
+    //   }
+    //   queryParams['serviceType'] = categoryParam;
+    // }
 
     // Add location filter if specified
     if (_selectedLocation.isNotEmpty) {
@@ -150,17 +165,70 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
       queryParams['serviceArea'] =
           _selectedLocation; // Also search in service areas
     }
+    
+    // Add user's location coordinates for distance-based search
+    if (_selectedLatitude != null && _selectedLongitude != null) {
+      queryParams['latitude'] = _selectedLatitude.toString();
+      queryParams['longitude'] = _selectedLongitude.toString();
+      final searchDistance = _maxDistance < 5.0 ? 10.0 : _maxDistance;
+      queryParams['maxDistance'] = searchDistance.toString();
+    }
+    
+    // Add availability filter
+    if (_onlyAvailable) {
+      queryParams['onlyAvailable'] = 'true';
+    }
 
-    _providersFuture = _apiService.fetchProviders(queryParams).then((response) {
+    // Debug: Print search parameters
+    print('🔍 Search Parameters:');
+    print('   Location: $_selectedLocation');
+    print('   Latitude: $_selectedLatitude');
+    print('   Longitude: $_selectedLongitude');
+    print('   Max Distance: $_maxDistance');
+    print('   Query Params: $queryParams');
+    
+    // Use fetchProviders for initial load, searchProviders only when there are search parameters
+    final hasSearchParams = queryParams.length > 2 || // More than just page and limit
+        _searchQuery.isNotEmpty ||
+        _selectedCategory != 'All' ||
+        _selectedLocation.isNotEmpty ||
+        _onlyAvailable ||
+        _minRating > 0.0 ||
+        _maxPrice < 1000.0 ||
+        _maxDistance < 50.0;
+    
+    _providersFuture = (hasSearchParams 
+        ? _apiService.searchProviders(queryParams)
+        : _apiService.fetchProviders(queryParams)
+    ).then((response) {
+      List<Provider> filteredProviders = response.providers;
+      
+      // DEBUG: Print all service types to see what's actually in the database
+      if (filteredProviders.isNotEmpty) {
+        print('=== DEBUG: Providers found ===');
+        for (final provider in filteredProviders) {
+          print('Provider: ${provider.fullName}');
+          print('  Service Type: "${provider.serviceType}"');
+          print('  Location: ${provider.location?.addressText}');
+          print('  Coordinates: ${provider.location?.coordinates}');
+          print('  Rating: ${provider.averageRating}');
+          print('  Available: ${provider.isAvailable}');
+          print('---');
+        }
+        print('=== END DEBUG ===');
+      } else {
+        print('❌ No providers found in search results');
+      }
+
       // Apply client-side filtering if search query exists and backend didn't filter
       if (_searchQuery.isNotEmpty &&
           !_searchQuery.startsWith('Category: ') &&
-          response.providers.length > 0) {
+          filteredProviders.length > 0) {
         // Get the search term for client-side filtering
         final String searchTerm = _searchQuery.toLowerCase();
 
         // Filter providers whose name contains the search term
-        final filteredProviders = response.providers.where((provider) {
+        filteredProviders = filteredProviders.where((provider) {
           final fullName = (provider.fullName ?? '').toLowerCase();
           final companyName = (provider.companyName ?? '').toLowerCase();
           final serviceType = (provider.serviceType ?? '').toLowerCase();
@@ -169,62 +237,118 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
               companyName.contains(searchTerm) ||
               serviceType.contains(searchTerm);
         }).toList();
-
-        // If we filtered out any providers, return our filtered list
-        if (filteredProviders.length != response.providers.length) {
-          return ProviderListResponse(
-            providers: filteredProviders,
-            currentPage: response.currentPage,
-            totalPages: response.totalPages,
-            totalProviders: filteredProviders.length,
-          );
-        }
       }
 
-      // Apply client-side location filtering if needed
-      if (_selectedLocation.isNotEmpty && response.providers.length > 0) {
-        final filteredByLocation = response.providers.where((provider) {
-          // Check the city field in location
-          final providerCity = provider.location?.city?.toLowerCase() ?? '';
-
-          // Check the address text field
-          final providerAddress =
-              provider.location?.addressText?.toLowerCase() ?? '';
-
-          // Check service areas field if available
-          List<String> serviceAreas = [];
-          try {
-            if (provider.toJson().containsKey('serviceAreas') &&
-                provider.toJson()['serviceAreas'] is List) {
-              serviceAreas =
-                  List<String>.from(provider.toJson()['serviceAreas']);
+      // Apply additional advanced filters
+      if (filteredProviders.isNotEmpty) {
+        // Apply category filtering (client-side as fallback)
+        if (_selectedCategory != 'All') {
+          filteredProviders = filteredProviders.where((provider) {
+            final serviceType = (provider.serviceType ?? '').toLowerCase();
+            
+            // Define possible service type variations for each category
+            switch (_selectedCategory) {
+              case 'Plumbing':
+                return serviceType.contains('plumb') || 
+                       serviceType.contains('water') ||
+                       serviceType.contains('pipe');
+              case 'Electrical':
+                return serviceType.contains('electric') || 
+                       serviceType.contains('wiring') ||
+                       serviceType.contains('power');
+              case 'Cleaning':
+                return serviceType.contains('clean') || 
+                       serviceType.contains('housekeep') ||
+                       serviceType.contains('maid');
+              case 'Gardening':
+                return serviceType.contains('garden') || 
+                       serviceType.contains('landscap') ||
+                       serviceType.contains('plant');
+              case 'Painting':
+                return serviceType.contains('paint') || 
+                       serviceType.contains('decor') ||
+                       serviceType.contains('wall');
+              case 'Carpentry':
+                return serviceType.contains('carpen') || 
+                       serviceType.contains('wood') ||
+                       serviceType.contains('furniture');
+              default:
+                return true;
             }
-          } catch (e) {
-          }
-
-          // Check if the provider operates in the selected location
-          final bool inCity =
-              providerCity.contains(_selectedLocation.toLowerCase());
-          final bool inAddress =
-              providerAddress.contains(_selectedLocation.toLowerCase());
-          final bool inServiceArea = serviceAreas.any((area) =>
-              area.toLowerCase().contains(_selectedLocation.toLowerCase()));
-
-          return inCity || inAddress || inServiceArea;
-        }).toList();
-
-        if (filteredByLocation.length != response.providers.length) {
-          return ProviderListResponse(
-            providers: filteredByLocation,
-            currentPage: response.currentPage,
-            totalPages: response.totalPages,
-            totalProviders: filteredByLocation.length,
-          );
+          }).toList();
         }
+        
+        // Note: Location filtering is now handled by the backend
+        // Client-side location filtering removed to avoid conflicts with backend search
+        
+        // Apply rating filter
+        if (_minRating > 0.0) {
+          filteredProviders = filteredProviders.where((provider) {
+            return (provider.averageRating ?? 0.0) >= _minRating;
+          }).toList();
+        }
+        
+        // Apply price filter
+        if (_maxPrice < 1000.0) {
+          filteredProviders = filteredProviders.where((provider) {
+            return (provider.hourlyRate ?? 0.0) <= _maxPrice;
+          }).toList();
+        }
+        
+        // Apply availability filter (backend filtering is primary, this is fallback)
+        if (_onlyAvailable) {
+          filteredProviders = filteredProviders.where((provider) {
+            return provider.isAvailable ?? true; // Default to available if not specified
+          }).toList();
+        }
+        
+        // Apply tags filter (this would need backend support for real implementation)
+        if (_selectedTags.isNotEmpty) {
+          // For now, we'll simulate tag filtering
+          // In a real implementation, this would check provider tags/specialties
+        }
+        
+        // Apply distance filter (this would need location coordinates and distance calculation)
+        if (_maxDistance < 50.0 && _selectedLatitude != null && _selectedLongitude != null) {
+          // For now, we'll keep all providers
+          // In a real implementation, this would calculate distance based on coordinates
+        }
+        
+        // Apply sorting
+        filteredProviders.sort((a, b) {
+          int comparison = 0;
+          
+          switch (_sortBy) {
+            case 'rating':
+              final aRating = a.averageRating ?? 0.0;
+              final bRating = b.averageRating ?? 0.0;
+              comparison = aRating.compareTo(bRating);
+              break;
+            case 'price':
+              final aPrice = a.hourlyRate ?? 0.0;
+              final bPrice = b.hourlyRate ?? 0.0;
+              comparison = aPrice.compareTo(bPrice);
+              break;
+            case 'distance':
+              // For now, sort by name since we don't have distance calculation
+              comparison = (a.fullName ?? '').compareTo(b.fullName ?? '');
+              break;
+            default:
+              comparison = (a.fullName ?? '').compareTo(b.fullName ?? '');
+          }
+          
+          // Apply sort order
+          return _sortOrder == 'desc' ? -comparison : comparison;
+        });
       }
-
-      // Return original response if no filtering needed
-      return response;
+      
+      // Return filtered and sorted response
+      return ProviderListResponse(
+        providers: filteredProviders,
+        currentPage: response.currentPage,
+        totalPages: response.totalPages,
+        totalProviders: filteredProviders.length,
+      );
     });
 
     _providersFuture.then((response) {
@@ -318,9 +442,56 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
     setState(() {
       _searchQuery = '';
       _selectedCategory = 'All';
+      _selectedLocation = '';
+      _selectedLatitude = null;
+      _selectedLongitude = null;
+      _minRating = 0.0;
+      _maxPrice = 1000.0;
+      _maxDistance = 50.0;
+      _onlyAvailable = false;
+      _selectedTags.clear();
+      _sortBy = 'rating';
+      _sortOrder = 'desc';
       _searchController.clear();
     });
     _loadProviders(resetPage: true);
+  }
+
+  // Apply advanced filters from the AdvancedSearchScreen
+  void _applyAdvancedFilters(SearchFilters filters) {
+    setState(() {
+      _searchQuery = filters.searchQuery;
+      _selectedCategory = filters.selectedCategory;
+      _selectedLocation = filters.selectedLocation;
+      _selectedLatitude = filters.selectedLatitude;
+      _selectedLongitude = filters.selectedLongitude;
+      _minRating = filters.minRating;
+      _maxPrice = filters.maxPrice;
+      _maxDistance = filters.maxDistance;
+      _onlyAvailable = filters.onlyAvailable;
+      _selectedTags = List.from(filters.selectedTags);
+      _sortBy = filters.sortBy;
+      _sortOrder = filters.sortOrder;
+      
+      // Update the search controller to reflect the search query
+      _searchController.text = filters.searchQuery;
+    });
+    
+    _loadProviders(resetPage: true);
+  }
+
+  // Check if any filters are currently active
+  bool _hasActiveFilters() {
+    return _searchQuery.isNotEmpty ||
+           _selectedCategory != 'All' ||
+           _selectedLocation.isNotEmpty ||
+           _minRating > 0.0 ||
+           _maxPrice < 1000.0 ||
+           _maxDistance < 50.0 ||
+           _onlyAvailable ||
+           _selectedTags.isNotEmpty ||
+           _sortBy != 'rating' ||
+           _sortOrder != 'desc';
   }
 
   // This is a helper method for development to show some sample data
@@ -487,7 +658,27 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          if (_searchQuery.isNotEmpty || _selectedCategory != 'All')
+          IconButton(
+            icon: Icon(Icons.tune, color: AppTheme.primary),
+            tooltip: AppLocalizations.of(context)!.advancedSearch,
+            onPressed: () async {
+              final result = await Navigator.push<SearchFilters>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AdvancedSearchScreen(
+                    initialSearch: _searchQuery.isNotEmpty ? _searchQuery : null,
+                    initialLocation: _selectedLocation.isNotEmpty ? _selectedLocation : null,
+                    onFiltersApplied: null, // We'll handle the result via the return value
+                  ),
+                ),
+              );
+              
+              if (result != null) {
+                _applyAdvancedFilters(result);
+              }
+            },
+          ),
+          if (_hasActiveFilters())
             IconButton(
               icon: Icon(Icons.filter_alt_off, color: AppTheme.primary),
               tooltip: AppLocalizations.of(context)!.clearFilters,

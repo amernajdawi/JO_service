@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../models/booking_model.dart';
+import '../l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
@@ -223,7 +224,7 @@ class _AdminBookingManagementScreenState extends State<AdminBookingManagementScr
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      booking.status.toUpperCase(),
+                      _getLocalizedStatus(booking.status),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -449,7 +450,7 @@ class _AdminBookingManagementScreenState extends State<AdminBookingManagementScr
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
-                                booking.status.toUpperCase(),
+                                _getLocalizedStatus(booking.status),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -981,5 +982,25 @@ class _AdminBookingManagementScreenState extends State<AdminBookingManagementScr
               ),
             ),
     );
+  }
+
+  String _getLocalizedStatus(String status) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (status) {
+      case 'pending':
+        return l10n.pendingBookings;
+      case 'accepted':
+        return l10n.acceptedBookings;
+      case 'in_progress':
+        return l10n.inProgressBookings;
+      case 'completed':
+        return l10n.completedBookings;
+      case 'declined_by_provider':
+        return l10n.declinedByProvider;
+      case 'cancelled_by_user':
+        return l10n.cancelledByUser;
+      default:
+        return status.replaceAll('_', ' ').toUpperCase();
+    }
   }
 }

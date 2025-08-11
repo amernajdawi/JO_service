@@ -50,8 +50,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       if (token == null || userType == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Authentication error. Please login again.')),
+            SnackBar(
+                content: Text(AppLocalizations.of(context)!.authenticationErrorPleaseLogin)),
           );
         }
         return;
@@ -97,7 +97,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading booking details: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingBookingDetails}: $e')),
         );
       }
     }
@@ -137,7 +137,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
-                  'Booking ${_getStatusActionText(newStatus)} successfully.')),
+                  AppLocalizations.of(context)!.bookingActionSuccessfully(_getStatusActionText(newStatus)))),
         );
       }
     } catch (e) {
@@ -146,7 +146,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating booking status: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorUpdatingBookingStatus}: $e')),
         );
       }
     }
@@ -155,7 +155,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   Future<void> _navigateToRatingScreen() async {
     if (_booking == null || _booking!.provider?.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Provider information not available')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.providerInformationNotAvailable)),
       );
       return;
     }
@@ -179,7 +179,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   Future<void> _submitRating() async {
     if (_userRating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a rating')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectRating)),
       );
       return;
     }
@@ -195,8 +195,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       if (token == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Authentication error. Please login again.')),
+            SnackBar(
+                content: Text(AppLocalizations.of(context)!.authenticationErrorPleaseLogin)),
           );
         }
         return;
@@ -218,7 +218,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rating submitted successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.ratingSubmittedSuccessfully)),
         );
       }
     } catch (e) {
@@ -227,7 +227,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           _isRatingSubmitting = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error submitting rating: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorSubmittingRating}: $e')),
         );
       }
     }
@@ -236,17 +236,36 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   String _getStatusActionText(String status) {
     switch (status) {
       case 'cancelled_by_user':
-        return 'cancelled';
+        return AppLocalizations.of(context)!.cancelledByUser;
       case 'accepted':
-        return 'accepted';
+        return AppLocalizations.of(context)!.accepted;
       case 'declined_by_provider':
-        return 'declined';
+        return AppLocalizations.of(context)!.declinedByProvider;
       case 'in_progress':
-        return 'marked as in progress';
+        return AppLocalizations.of(context)!.markedAsInProgress;
       case 'completed':
-        return 'marked as completed';
+        return AppLocalizations.of(context)!.markedAsCompleted;
       default:
-        return 'updated';
+        return AppLocalizations.of(context)!.updated;
+    }
+  }
+
+  String _getLocalizedStatus(String status) {
+    switch (status) {
+      case 'pending':
+        return AppLocalizations.of(context)!.pendingBookings;
+      case 'accepted':
+        return AppLocalizations.of(context)!.acceptedBookings;
+      case 'in_progress':
+        return AppLocalizations.of(context)!.inProgressBookings;
+      case 'completed':
+        return AppLocalizations.of(context)!.completedBookings;
+      case 'declined_by_provider':
+        return AppLocalizations.of(context)!.declinedByProvider;
+      case 'cancelled_by_user':
+        return AppLocalizations.of(context)!.cancelledByUser;
+      default:
+        return status.replaceAll('_', ' ').toUpperCase();
     }
   }
 
@@ -254,19 +273,19 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Confirm $action'),
-        content: Text('Are you sure you want to $action this booking?'),
+        title: Text(AppLocalizations.of(context)!.confirmAction(action)),
+        content: Text(AppLocalizations.of(context)!.areYouSureActionBooking(action)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('No'),
+            child: Text(AppLocalizations.of(context)!.no),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _updateBookingStatus(newStatus);
             },
-            child: Text('Yes',
+            child: Text(AppLocalizations.of(context)!.yes,
                 style: TextStyle(color: _getActionColor(newStatus))),
           ),
         ],
@@ -297,7 +316,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       if (_booking!.canBeCancelledByUser) {
         return ElevatedButton.icon(
           icon: const Icon(Icons.cancel, color: Colors.white),
-          label: const Text('Cancel Booking'),
+          label: Text(AppLocalizations.of(context)!.cancelBooking),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
           onPressed: () =>
               _showConfirmationDialog('cancel', 'cancelled_by_user'),
@@ -311,13 +330,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           children: [
             ElevatedButton.icon(
               icon: const Icon(Icons.check_circle, color: Colors.white),
-              label: const Text('Accept'),
+              label: Text(AppLocalizations.of(context)!.accept),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
               onPressed: () => _showConfirmationDialog('accept', 'accepted'),
             ),
             ElevatedButton.icon(
               icon: const Icon(Icons.cancel, color: Colors.white),
-              label: const Text('Decline'),
+              label: Text(AppLocalizations.of(context)!.decline),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () =>
                   _showConfirmationDialog('decline', 'declined_by_provider'),
@@ -327,14 +346,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       } else if (_booking!.canBeMarkedInProgress) {
         return ElevatedButton.icon(
           icon: const Icon(Icons.play_arrow, color: Colors.white),
-          label: const Text('Start Service'),
+          label: Text(AppLocalizations.of(context)!.startService),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
           onPressed: () => _showConfirmationDialog('start', 'in_progress'),
         );
       } else if (_booking!.canBeMarkedCompleted) {
         return ElevatedButton.icon(
           icon: const Icon(Icons.done_all, color: Colors.white),
-          label: const Text('Complete Service'),
+          label: Text(AppLocalizations.of(context)!.completeService),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
           onPressed: () => _showConfirmationDialog('complete', 'completed'),
         );
@@ -548,7 +567,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.bookingDetails),
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -574,7 +596,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${AppLocalizations.of(context)!.bookingStatus}: ${_booking!.readableStatus}',
+                                      '${AppLocalizations.of(context)!.bookingStatus}: ${_getLocalizedStatus(_booking!.status)}',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,

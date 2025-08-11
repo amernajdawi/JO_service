@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../models/booking_model.dart';
 import '../services/auth_service.dart';
 import '../services/booking_service.dart';
@@ -157,6 +158,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
 
   void _showNewBookingNotification(int newBookingsCount) {
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -169,7 +171,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '$newBookingsCount new booking${newBookingsCount > 1 ? 's' : ''} received!',
+                  l10n.newBookingsReceived(newBookingsCount),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -224,9 +226,9 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
       final providerId = await authService.getUserId();
 
       if (token == null || providerId == null) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication error. Please login again.')),
+          SnackBar(content: Text(l10n.authenticationErrorPleaseLogin)),
         );
         return;
       }
@@ -279,8 +281,9 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
         setState(() {
           _isLoading = false;
         });
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading bookings: $e')),
+          SnackBar(content: Text('${l10n.errorLoadingBookings}: $e')),
         );
       }
     }
@@ -300,9 +303,9 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
       final providerId = await authService.getUserId();
 
       if (token == null || providerId == null) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication error. Please login again.')),
+          SnackBar(content: Text(l10n.authenticationErrorPleaseLogin)),
         );
         return;
       }
@@ -339,8 +342,9 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
         setState(() {
           _isLoading = false;
         });
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading more bookings: $e')),
+          SnackBar(content: Text('${l10n.errorLoadingBookings}: $e')),
         );
       }
     }
@@ -355,9 +359,10 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
         address: address,
       );
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to open navigation: $e'),
+          content: Text('${l10n.failedToOpenNavigation}: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -371,9 +376,9 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
       final token = await authService.getToken();
 
       if (token == null) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Authentication error. Please login again.')),
+          SnackBar(content: Text(l10n.authenticationErrorPleaseLogin)),
         );
         return;
       }
@@ -387,16 +392,18 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
       // Refresh the bookings list
       _fetchBookings();
 
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Booking status updated to ${newStatus.replaceAll('_', ' ')}'),
+          content: Text(l10n.bookingStatusUpdatedTo(newStatus.replaceAll('_', ' '))),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error updating booking status: $e'),
+          content: Text('${l10n.errorUpdatingBookingStatus}: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -405,6 +412,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -445,7 +453,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                           ),
                           Expanded(
                             child: Text(
-                              'My Bookings',
+                              l10n.providerBookingsTitle,
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w700,
@@ -497,17 +505,17 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                                   if (_isAutoRefreshActive) {
                                     _startAutoRefresh();
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Auto-refresh enabled'),
-                                        duration: Duration(seconds: 2),
+                                      SnackBar(
+                                        content: Text(l10n.autoRefreshEnabled),
+                                        duration: const Duration(seconds: 2),
                                       ),
                                     );
                                   } else {
                                     _stopAutoRefresh();
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Auto-refresh disabled'),
-                                        duration: Duration(seconds: 2),
+                                      SnackBar(
+                                        content: Text(l10n.autoRefreshDisabled),
+                                        duration: const Duration(seconds: 2),
                                       ),
                                     );
                                   }
@@ -555,14 +563,14 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
-                          tabs: const [
-                            Tab(text: 'All'),
-                            Tab(text: 'Pending'),
-                            Tab(text: 'Accepted'),
-                            Tab(text: 'In Progress'),
-                            Tab(text: 'Completed'),
-                            Tab(text: 'Declined'),
-                            Tab(text: 'Cancelled'),
+                          tabs: [
+                            Tab(text: l10n.allBookings),
+                            Tab(text: l10n.pendingBookings),
+                            Tab(text: l10n.acceptedBookings),
+                            Tab(text: l10n.inProgressBookings),
+                            Tab(text: l10n.completedBookings),
+                            Tab(text: l10n.rejectedBookings),
+                            Tab(text: l10n.cancelledBookings),
                           ],
                         ),
                       ),
@@ -613,6 +621,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
   }
 
   Widget _buildEmptyState(bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -641,7 +650,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            'No bookings yet',
+            l10n.noBookingsFound,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w700,
@@ -650,7 +659,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'You\'ll see your booking requests here',
+            l10n.noBookingsMessage,
             style: TextStyle(
               fontSize: 16,
               color: isDark ? Colors.white54 : const Color(0xFF8E8E93),
@@ -662,6 +671,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
   }
 
   Widget _buildBookingCard(Booking booking, bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
     final statusColor = _getStatusColor(booking.status);
     final statusIcon = _getStatusIcon(booking.status);
     
@@ -736,7 +746,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                        booking.status.replaceAll('_', ' ').toUpperCase(),
+                        _getLocalizedStatus(booking.status, l10n),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
@@ -773,7 +783,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                           color: const Color(0xFF007AFF),
                         ),
                         onPressed: () => _openNavigation(booking.serviceLocationDetails!),
-                        tooltip: 'Open in Google Maps',
+                        tooltip: l10n.openInGoogleMaps,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -810,7 +820,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                   children: [
                       Expanded(
                         child: _buildActionButton(
-                          'Accept',
+                          l10n.accept,
                           Icons.check_rounded,
                           const Color(0xFF34C759),
                           () => _updateBookingStatus(booking, 'accepted'),
@@ -820,7 +830,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildActionButton(
-                          'Decline',
+                          l10n.decline,
                           Icons.close_rounded,
                           const Color(0xFFFF3B30),
                           () => _updateBookingStatus(booking, 'declined_by_provider'),
@@ -831,7 +841,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                   ),
                 ] else if (booking.status == 'accepted') ...[
                   _buildActionButton(
-                    'Start Service',
+                    l10n.startService,
                     Icons.play_arrow_rounded,
                     const Color(0xFF007AFF),
                     () => _updateBookingStatus(booking, 'in_progress'),
@@ -839,7 +849,7 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
                   ),
                 ] else if (booking.status == 'in_progress') ...[
                   _buildActionButton(
-                    'Complete Service',
+                    l10n.completeService,
                     Icons.check_circle_rounded,
                     const Color(0xFF34C759),
                     () => _updateBookingStatus(booking, 'completed'),
@@ -933,6 +943,25 @@ class _ProviderBookingsScreenState extends State<ProviderBookingsScreen>
         return Icons.cancel_outlined;
       default:
         return Icons.circle_outlined;
+    }
+  }
+
+  String _getLocalizedStatus(String status, AppLocalizations l10n) {
+    switch (status) {
+      case 'pending':
+        return l10n.pendingBookings;
+      case 'accepted':
+        return l10n.acceptedBookings;
+      case 'in_progress':
+        return l10n.inProgressBookings;
+      case 'completed':
+        return l10n.completedBookings;
+      case 'declined_by_provider':
+        return l10n.declinedByProvider;
+      case 'cancelled_by_user':
+        return l10n.cancelledByUser;
+      default:
+        return status.replaceAll('_', ' ').toUpperCase();
     }
   }
 

@@ -6,7 +6,9 @@ import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../services/locale_service.dart';
 import '../services/booking_service.dart';
-import './role_selection_screen.dart';
+import '../services/api_service.dart';
+import '../models/provider_model.dart' as model;
+import './user_login_screen.dart';
 import './edit_provider_profile_screen.dart';
 import './provider_bookings_screen.dart';
 import './provider_messages_screen.dart';
@@ -46,6 +48,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   
   // Auto-refresh indicator
   bool _isAutoRefreshActive = true;
+  
+  // Provider availability state
+  bool _isProviderAvailable = true;
+  bool _isUpdatingAvailability = false;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -99,8 +106,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
     _slideController.forward();
     _scaleController.forward();
 
-    // Load booking statistics
+    // Load booking statistics and provider profile
     _loadBookingStatistics();
+    _loadProviderProfile();
     
     // Start auto-refresh timer
     _startAutoRefresh();
@@ -230,6 +238,124 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
       _isLoadingStats = true;
     });
     await _loadBookingStatistics();
+    await _loadProviderProfile();
+  }
+
+  Future<void> _loadProviderProfile() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+      
+      if (token == null) {
+        return;
+      }
+      
+      final profile = await _apiService.getMyProviderProfile(token);
+      
+      if (mounted) {
+        setState(() {
+          _isProviderAvailable = profile.isAvailable ?? true;
+        });
+      }
+    } catch (e) {
+      // Silently fail for now, don't show error for this background operation
+      print('Error loading provider profile: $e');
+    }
+  }
+
+  Future<void> _updateProviderAvailability(bool newAvailability) async {
+    if (_isUpdatingAvailability) return;
+    
+    setState(() {
+      _isUpdatingAvailability = true;
+    });
+    
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+      
+      if (token == null) {
+        throw Exception('Authentication token not found');
+      }
+      
+      // Use the dedicated availability endpoint
+      await _apiService.updateProviderAvailability(token, newAvailability);
+      
+      setState(() {
+        _isProviderAvailable = newAvailability;
+      });
+      
+      // Show success feedback
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                newAvailability ? Icons.check_circle : Icons.pause_circle_filled,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  newAvailability 
+                    ? l10n.nowAvailable 
+                    : l10n.nowUnavailable,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: newAvailability 
+            ? const Color(0xFF34C759) 
+            : const Color(0xFFFF9500),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Failed to update availability: ${e.toString()}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFFF3B30),
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isUpdatingAvailability = false;
+      });
+    }
   }
 
   void _showNewBookingNotification(int newBookingsCount) {
@@ -401,9 +527,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  localeService.currentLocale.languageCode == 'ar'
-                                      ? 'تم تغيير اللغة إلى العربية'
-                                      : 'Language changed to English',
+                                  l10n.languageChanged,
                                 ),
                                 duration: const Duration(seconds: 2),
                               ),
@@ -480,15 +604,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                                 width: 60,
                                 height: 60,
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+                                  gradient: LinearGradient(
+                                    colors: _isProviderAvailable 
+                                      ? [const Color(0xFF007AFF), const Color(0xFF5856D6)]
+                                      : [const Color(0xFF8E8E93), const Color(0xFF6D6D70)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: const Icon(
-                                  Icons.person_rounded,
+                                child: Icon(
+                                  _isProviderAvailable ? Icons.person_rounded : Icons.person_off_rounded,
                                   color: Colors.white,
                                   size: 28,
                                 ),
@@ -508,11 +634,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      l10n.readyToServe,
+                                      _isProviderAvailable ? l10n.readyToServe : l10n.currentlyUnavailable,
                                       style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.w700,
-                                        color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                        color: _isProviderAvailable 
+                                          ? (isDark ? Colors.white : const Color(0xFF1D1D1F))
+                                          : (isDark ? Colors.white54 : const Color(0xFF8E8E93)),
                                         letterSpacing: -0.5,
                                       ),
                                     ),
@@ -520,6 +648,96 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 20),
+                          // Availability Toggle Section
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _isProviderAvailable 
+                                ? const Color(0xFF34C759).withOpacity(0.1)
+                                : const Color(0xFFFF9500).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _isProviderAvailable 
+                                  ? const Color(0xFF34C759).withOpacity(0.3)
+                                  : const Color(0xFFFF9500).withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: _isProviderAvailable 
+                                      ? const Color(0xFF34C759)
+                                      : const Color(0xFFFF9500),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    _isProviderAvailable 
+                                      ? Icons.check_circle
+                                      : Icons.pause_circle_filled,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        l10n.availabilityStatus,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _isProviderAvailable 
+                                          ? l10n.availableForBookings
+                                          : l10n.currentlyUnavailable,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark ? Colors.white70 : const Color(0xFF8E8E93),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Toggle Switch
+                                Transform.scale(
+                                  scale: 0.8,
+                                  child: Switch(
+                                    value: _isProviderAvailable,
+                                    onChanged: _isUpdatingAvailability 
+                                      ? null 
+                                      : (value) => _updateProviderAvailability(value),
+                                    activeColor: const Color(0xFF34C759),
+                                    inactiveThumbColor: const Color(0xFFFF9500),
+                                    inactiveTrackColor: const Color(0xFFFF9500).withOpacity(0.3),
+                                  ),
+                                ),
+                                if (_isUpdatingAvailability)
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 8),
+                                    child: SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF007AFF)),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -871,7 +1089,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                 await authService.logout();
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (context) => const RoleSelectionScreen(),
+                    builder: (context) => const UserLoginScreen(),
                   ),
                   (Route<dynamic> route) => false,
                 );
@@ -1005,10 +1223,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
           ),
         );
         
-        // Navigate to role selection screen
+        // Navigate to user login screen
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (context) => const RoleSelectionScreen(),
+            builder: (context) => const UserLoginScreen(),
           ),
           (Route<dynamic> route) => false,
         );

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import './api_service.dart'; // To use getBaseUrl
+import './oauth_service.dart'; // Added for social login
 import 'package:flutter/material.dart'; // Added for ChangeNotifier
 
 // UserInfo class to hold basic user details after login
@@ -198,18 +199,30 @@ class AuthService with ChangeNotifier {
     ).timeout(const Duration(seconds: 10));
 
     final responseData = json.decode(response.body);
-    if (response.statusCode == 201 && responseData['token'] != null) {
-      await _saveAuthData(
-          responseData['token'],
-          'user',
-          UserInfo(
-              id: responseData['user']['_id'],
-              email: email,
-              fullName: fullName ?? ''));
-      return responseData; // Contains user and token
-    } else {
-      throw Exception(responseData['message'] ?? 'Failed to register user');
+    if (response.statusCode == 201) {
+      // Check if verification is required
+      if (responseData['verificationRequired'] == true) {
+        // Return verification data without saving auth data
+        return {
+          ...responseData,
+          'verificationRequired': true,
+          'userId': responseData['user']['_id'],
+        };
+      } else if (responseData['token'] != null) {
+        // Legacy case - user is immediately verified
+        await _saveAuthData(
+            responseData['token'],
+            'user',
+            UserInfo(
+                id: responseData['user']['_id'],
+                email: email,
+                fullName: fullName ?? ''));
+        return responseData;
+      }
     }
+    
+    // If we reach here, something went wrong
+    throw Exception(responseData['message'] ?? 'Failed to register user');
   }
 
   Future<Map<String, dynamic>> loginUser(
@@ -324,7 +337,36 @@ class AuthService with ChangeNotifier {
     }
   }
 
+  // Social Login Methods
+  // Facebook OAuth removed - only Google OAuth is supported
+
+  Future<Map<String, dynamic>> loginWithGoogle() async {
+    try {
+      final result = await OAuthService.signInWithGoogle();
+      
+      if (result != null && result['success'] == true) {
+        // Save authentication data
+        await _saveAuthData(
+          result['token'],
+          'user', // Assume user type for social login
+          UserInfo(
+            id: result['user']['_id'] ?? result['user']['id'],
+            email: result['user']['email'],
+            fullName: result['user']['fullName'] ?? result['user']['displayName'] ?? '',
+          ),
+        );
+        return result;
+      } else {
+        throw Exception(result?['message'] ?? 'Google login failed');
+      }
+    } catch (e) {
+      throw Exception('Google login error: $e');
+    }
+  }
+
   Future<void> logout() async {
+    // Sign out from social accounts
+    await OAuthService.signOut();
     await clearAuthData();
     // _isLoading and notifyListeners are handled in clearAuthData
   }

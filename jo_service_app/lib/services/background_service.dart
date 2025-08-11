@@ -148,7 +148,7 @@ class BackgroundService {
     if (kDebugMode) {
     }
     // You could implement alternative notification strategies here
-    // such as using Firebase Cloud Messaging for push notifications
+    // such as using local notifications or third-party services
   }
 
   // Stop all background tasks

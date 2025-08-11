@@ -43,6 +43,28 @@
 	<string>This app needs access to photo library to select and upload profile pictures.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app needs access to save photos to your photo library.</string>
+	<key>GIDClientID</key>
+	<string>912520355771-8k0m57ofphlrj1g325sv2ter1ou998et.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Google Sign-In</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.912520355771-8k0m57ofphlrj1g325sv2ter1ou998et</string>
+			</array>
+		</dict>
+
+	</array>
+
+
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>background-fetch</string>
+		<string>background-processing</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -7,16 +7,17 @@ import 'package:jo_service_app/services/theme_service.dart'; // Import ThemeServ
 import 'package:jo_service_app/services/locale_service.dart'; // Import LocaleService
 import 'package:jo_service_app/services/background_service.dart'; // Import BackgroundService
 import 'package:jo_service_app/services/app_lifecycle_manager.dart'; // Import AppLifecycleManager
+import 'package:jo_service_app/services/push_notification_service.dart'; // Import LocalNotificationService
 import 'package:provider/provider.dart'; // Added import
 // import 'screens/splash_screen.dart'; // New initial screen // Commented out as SplashScreen is deleted
 import './screens/auth_check_screen.dart'; // Import AuthCheckScreen
-import './screens/role_selection_screen.dart';
 import './screens/user_home_screen.dart';
 import './screens/user_profile_screen.dart'; // Import UserProfileScreen
 import './screens/provider_dashboard_screen.dart';
 import './screens/user_login_screen.dart'; // Import UserLoginScreen
 import './screens/provider_login_screen.dart'; // Import ProviderLoginScreen
 import './screens/user_signup_screen.dart'; // Import UserSignupScreen
+import './screens/user_verification_screen.dart'; // Import UserVerificationScreen
 import './screens/provider_signup_screen.dart'; // Import ProviderSignupScreen
 import './screens/user_bookings_screen.dart'; // Import UserBookingsScreen
 import './screens/provider_bookings_screen.dart'; // Import ProviderBookingsScreen
@@ -36,6 +37,14 @@ void main() async {
     await BackgroundService.initialize();
   } catch (e) {
     // Continue without background service if initialization fails
+  }
+  
+  // Initialize local notifications
+  try {
+    await LocalNotificationService().initialize();
+  } catch (e) {
+    // Continue without notifications if initialization fails
+    print('Failed to initialize local notifications: $e');
   }
   
   runApp(const MyApp());
@@ -108,13 +117,13 @@ class _MyAppState extends State<MyApp> {
             },
             
             initialRoute: AuthCheckScreen.routeName,
-            home: const RoleSelectionScreen(),
+            home: const UserLoginScreen(),
           onGenerateRoute: (settings) {
             switch (settings.name) {
               // Home route
               case '/':
                 return MaterialPageRoute(
-                    builder: (_) => const RoleSelectionScreen());
+                    builder: (_) => const UserLoginScreen());
               // case SplashScreen.routeName: // Commented out
               // return MaterialPageRoute(builder: (_) => const SplashScreen()); // Commented out
               // Add your other primary routes here if they don't take arguments
@@ -124,9 +133,6 @@ class _MyAppState extends State<MyApp> {
               case AuthCheckScreen.routeName:
                 return MaterialPageRoute(
                     builder: (_) => const AuthCheckScreen());
-              case RoleSelectionScreen.routeName:
-                return MaterialPageRoute(
-                    builder: (_) => const RoleSelectionScreen());
               case UserHomeScreen.routeName:
                 return MaterialPageRoute(
                     builder: (_) => const UserHomeScreen());
@@ -153,6 +159,26 @@ class _MyAppState extends State<MyApp> {
               case UserSignUpScreen.routeName: // Added UserSignUpScreen route
                 return MaterialPageRoute(
                     builder: (_) => const UserSignUpScreen());
+              case UserVerificationScreen.routeName: // Added UserVerificationScreen route
+                if (settings.arguments is Map<String, dynamic>) {
+                  final arguments = settings.arguments as Map<String, dynamic>;
+                  return MaterialPageRoute(
+                    builder: (_) => UserVerificationScreen(
+                      emailVerificationToken: arguments['emailVerificationToken'],
+                      userId: arguments['userId'],
+                      isEmailVerification: arguments['isEmailVerification'] ?? false,
+                      userEmail: arguments['email'], // Add email support
+                    ),
+                  );
+                } else {
+                  return MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Error')),
+                      body: const Center(
+                          child: Text('Invalid arguments for User Verification')),
+                    ),
+                  );
+                }
               case ProviderSignUpScreen
                     .routeName: // Added ProviderSignUpScreen route
                 return MaterialPageRoute(
@@ -203,11 +229,11 @@ class _MyAppState extends State<MyApp> {
                     ),
                   );
                 }
-              // Default or unknown route - redirect to role selection
+              // Default or unknown route - redirect to user login
               default:
-                // Instead of showing 404, redirect to role selection screen
+                // Instead of showing 404, redirect to user login screen
                 return MaterialPageRoute(
-                  builder: (_) => const RoleSelectionScreen(),
+                  builder: (_) => const UserLoginScreen(),
                 );
             }
           },

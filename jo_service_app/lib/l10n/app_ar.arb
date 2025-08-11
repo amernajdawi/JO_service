@@ -98,6 +98,26 @@
   "writeReview": "اكتب تقييماً...",
   "submitRating": "إرسال التقييم",
   "punctuality": "الالتزام بالوقت",
+  
+  "notificationSettings": "إعدادات الإشعارات",
+  "notificationPreferences": "تفضيلات الإشعارات",
+  "notificationPreferencesDescription": "اختر الإشعارات التي تريد استلامها",
+  "bookingUpdates": "تحديثات الحجز",
+  "bookingUpdatesDescription": "استلام إشعارات حول تغييرات حالة الحجز",
+  "chatMessages": "رسائل المحادثة",
+  "chatMessagesDescription": "استلام إشعارات للرسائل الجديدة",
+  "ratings": "التقييمات",
+  "ratingsDescription": "استلام إشعارات للتقييمات والمراجعات الجديدة",
+  "promotions": "العروض الترويجية",
+  "promotionsDescription": "استلام إشعارات حول العروض الخاصة والترويجية",
+  "saveSettings": "حفظ الإعدادات",
+  "testNotificationSent": "تم إرسال إشعار الاختبار بنجاح",
+  "errorSendingTestNotification": "خطأ في إرسال إشعار الاختبار",
+  "settingsSaved": "تم حفظ الإعدادات بنجاح",
+  "errorSavingSettings": "خطأ في حفظ الإعدادات",
+  "sendTestNotification": "إرسال إشعار اختبار",
+  "notificationInfo": "معلومات الإشعارات",
+  "notificationInfoDescription": "يمكنك التحكم في الإشعارات التي تستلمها. تعطيل الإشعارات قد يجعلك تفوت التحديثات المهمة حول حجوزاتك ورسائلك.",
   "workQuality": "جودة العمل",
   "speedEfficiency": "السرعة والكفاءة",
   "cleanliness": "النظافة",
@@ -109,6 +129,7 @@
   
   "language": "اللغة",
   "changeLanguage": "تغيير اللغة",
+  "languageChanged": "تم تغيير اللغة بنجاح",
   "english": "English",
   "arabic": "العربية",
   
@@ -137,6 +158,12 @@
   "verifiedProviders": "مقدمو الخدمة المعتمدون",
   "rejectedProviders": "مقدمو الخدمة المرفوضون",
   "verifyProvider": "اعتماد مقدم الخدمة",
+  "resendVerification": "إعادة إرسال التحقق",
+  "resendVerificationEmail": "إعادة إرسال بريد التحقق",
+  "verificationEmailSent": "تم إرسال بريد التحقق!",
+  "accountNotVerified": "الحساب غير محقق",
+  "pleaseVerifyAccount": "يرجى التحقق من بريدك الإلكتروني ورقم هاتفك قبل تسجيل الدخول.",
+  "verifyAccount": "التحقق من الحساب",
   "rejectProvider": "رفض مقدم الخدمة",
   "totalUsers": "إجمالي المستخدمين",
   "totalProviders": "إجمالي مقدمي الخدمة",
@@ -286,6 +313,30 @@
   "errorCancellingBooking": "خطأ في إلغاء الحجز",
   "cancelBooking": "إلغاء الحجز",
   "areYouSureCancelBooking": "هل أنت متأكد من إلغاء هذا الحجز؟",
+  "advancedSearch": "البحث المتقدم",
+  "filters": "المرشحات",
+  "clearAll": "مسح الكل",
+  "category": "الفئة",
+  "minimumRating": "التقييم الأدنى",
+  "maxPrice": "السعر الأقصى",
+  "maxDistance": "المسافة القصوى",
+  "onlyAvailable": "المتاح فقط",
+  "serviceTags": "علامات الخدمة",
+  "sortBy": "ترتيب حسب",
+  "order": "الترتيب",
+  "ascending": "تصاعدي",
+  "descending": "تنازلي",
+  "price": "السعر",
+  "distance": "المسافة",
+  "results": "النتائج",
+  "page": "الصفحة",
+  "searching": "جاري البحث...",
+  "noProvidersFound": "لم يتم العثور على مقدمي الخدمات",
+  "tryAdjustingFilters": "حاول تعديل المرشحات",
+  "enterLocation": "أدخل الموقع",
+  "searchProviders": "البحث عن مقدمي الخدمات",
+  "useMyLocation": "استخدم موقعي",
+  "locationNotAvailable": "الموقع غير متاح",
   "yes": "نعم",
   "unknownProvider": "مقدم خدمة غير معروف",
   "service": "خدمة",
@@ -578,5 +629,210 @@
   "pleaseEnterYourName": "يرجى إدخال اسمك",
   "enterYourPhoneNumber": "أدخل رقم هاتفك",
   "cancel": "إلغاء",
-  "save": "حفظ"
+  "save": "حفظ",
+
+  "editProfileAuthenticationError": "خطأ في المصادقة. يرجى تسجيل الدخول مرة أخرى.",
+  "editProfileErrorLoading": "خطأ في تحميل الملف الشخصي: {error}",
+  "@editProfileErrorLoading": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editProfileImageUploadWebNotSupported": "تحميل الصور غير مدعوم في الويب. يرجى استخدام التطبيق المحمول.",
+  "editProfileErrorPickingImage": "خطأ في اختيار الصورة: {error}",
+  "@editProfileErrorPickingImage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editProfileCameraWebNotSupported": "الكاميرا غير مدعومة في الويب. يرجى استخدام التطبيق المحمول.",
+  "editProfileErrorTakingPhoto": "خطأ في التقاط الصورة: {error}",
+  "@editProfileErrorTakingPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editProfileBusinessProfile": "الملف الشخصي للأعمال",
+  "editProfileUpdateBusinessInfo": "قم بتحديث معلومات عملك وصورتك",
+  "editProfileUploadPhoto": "تحميل صورة",
+  "editProfileBusinessName": "اسم العمل",
+  "editProfileBusinessNameRequired": "اسم العمل مطلوب",
+  "editProfileDescription": "الوصف",
+  "editProfileDescriptionRequired": "الوصف مطلوب",
+  "editProfileServices": "الخدمات (مفصولة بفواصل)",
+  "editProfileServicesRequired": "الخدمات مطلوبة",
+  "editProfileHourlyRate": "المعدل الساعي ($)",
+  "editProfileHourlyRateRequired": "المعدل الساعي مطلوب",
+  "editProfileEnterValidNumber": "يرجى إدخال رقم صحيح",
+  "editProfilePhoneNumber": "رقم الهاتف",
+  "editProfilePhoneRequired": "رقم الهاتف مطلوب",
+  "editProfileAddress": "العنوان",
+  "editProfileAddressRequired": "العنوان مطلوب",
+  "editProfileSaveChanges": "حفظ التغييرات",
+
+  "providerBookingsTitle": "إدارة الحجوزات",
+  "allBookings": "جميع الحجوزات",
+  "pendingBookings": "قيد الانتظار",
+  "acceptedBookings": "مقبولة",
+  "inProgressBookings": "قيد التنفيذ",
+  "completedBookings": "مكتملة",
+  "cancelledBookings": "ملغية",
+  "rejectedBookings": "مرفوضة",
+  "noBookingsFound": "لا توجد حجوزات",
+  "noBookingsMessage": "لم يتم العثور على حجوزات لهذا الفلتر",
+  "loadingBookings": "جاري تحميل الحجوزات...",
+  "errorLoadingBookings": "خطأ في تحميل الحجوزات",
+  "refreshBookings": "تحديث الحجوزات",
+  "newBookingsReceived": "تم استلام {count} حجز جديد!",
+  "@newBookingsReceived": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookingFrom": "حجز من",
+  "requestedOn": "تم الطلب في",
+  "scheduledFor": "مجدول لـ",
+  "hourlyRate": "السعر بالساعة",
+  "estimatedDuration": "المدة المقدرة",
+  "totalAmount": "المبلغ الإجمالي",
+  "acceptBooking": "قبول الحجز",
+  "rejectBooking": "رفض الحجز",
+  "markInProgress": "بدء العمل",
+  "markCompleted": "إتمام العمل",
+  "viewDetails": "عرض التفاصيل",
+  "bookingAccepted": "تم قبول الحجز",
+  "bookingRejected": "تم رفض الحجز",
+  "bookingMarkedInProgress": "تم بدء العمل",
+  "bookingMarkedCompleted": "تم إتمام العمل",
+  "errorUpdatingBooking": "خطأ في تحديث الحجز",
+  "authenticationTokenMissing": "رمز المصادقة مفقود",
+  "loadMore": "تحميل المزيد",
+  "noMoreBookings": "لا توجد حجوزات أخرى",
+
+  "providerMessagesTitle": "الرسائل",
+  "conversations": "المحادثات",
+  "noConversationsFound": "لا توجد محادثات",
+  "noConversationsMessage": "لم تبدأ أي محادثات بعد. ستظهر رسائل العملاء هنا.",
+  "loadingConversations": "جاري تحميل المحادثات...",
+  "errorLoadingConversations": "خطأ في تحميل المحادثات",
+  "lastMessage": "آخر رسالة",
+  "newMessage": "رسالة جديدة",
+  "unreadMessages": "رسائل غير مقروءة",
+  "chatWith": "محادثة مع",
+  "openChat": "فتح المحادثة",
+  "messagePreview": "معاينة الرسالة",
+  "noMessagesYet": "لا توجد رسائل بعد",
+  "startConversation": "بدء المحادثة",
+  
+  "editProviderProfileTitle": "تعديل الملف الشخصي",
+  "availabilityStatus": "حالة التوفر",
+  "businessProfile": "الملف الشخصي للأعمال",
+  "updateBusinessInfo": "قم بتحديث معلومات عملك وصورتك",
+  "uploadPhoto": "تحميل صورة",
+  "businessName": "اسم العمل",
+  "businessNameRequired": "اسم العمل مطلوب",
+  "description": "الوصف",
+  "descriptionRequired": "الوصف مطلوب",
+  "services": "الخدمات (مفصولة بفواصل)",
+  "servicesRequired": "الخدمات مطلوبة",
+  "hourlyRate": "المعدل الساعي ($)",
+  "hourlyRateRequired": "المعدل الساعي مطلوب",
+  "enterValidNumber": "يرجى إدخال رقم صحيح",
+  "phoneNumber": "رقم الهاتف",
+  "phoneRequired": "رقم الهاتف مطلوب",
+  "address": "العنوان",
+  "addressRequired": "العنوان مطلوب",
+  "saveChanges": "حفظ التغييرات",
+  "profileUpdatedSuccessfully": "تم تحديث الملف الشخصي بنجاح!",
+  "errorUpdatingProfile": "خطأ في تحديث الملف الشخصي",
+  "profilePictureUploadedSuccessfully": "تم رفع صورة الملف الشخصي بنجاح!",
+  "errorUploadingProfilePicture": "خطأ في رفع صورة الملف الشخصي",
+  "chooseFromGallery": "اختر من المعرض",
+  "takePhoto": "التقاط صورة",
+  "imageUploadWebNotSupported": "تحميل الصور غير مدعوم في الويب. يرجى استخدام التطبيق المحمول.",
+  "errorPickingImage": "خطأ في اختيار الصورة",
+  "cameraWebNotSupported": "الكاميرا غير مدعومة في الويب. يرجى استخدام التطبيق المحمول.",
+  "errorTakingPhoto": "خطأ في التقاط الصورة",
+  
+  "deletingAccount": "جاري حذف الحساب...",
+  "failedToDeleteAccount": "فشل في حذف الحساب",
+  "authenticationErrorPleaseLogin": "خطأ في المصادقة. يرجى تسجيل الدخول مرة أخرى.",
+  "authenticationTokenNotFound": "لم يتم العثور على رمز المصادقة. يرجى تسجيل الدخول.",
+  "failedToLoadConversations": "فشل في تحميل المحادثات",
+  "refresh": "تحديث",
+  "openInGoogleMaps": "فتح في خرائط جوجل",
+  "accept": "قبول",
+  "decline": "رفض",
+  "startService": "بدء الخدمة",
+  "completeService": "إكمال الخدمة",
+  "bookingStatusUpdatedTo": "تم تحديث حالة الحجز إلى {status}",
+  "@bookingStatusUpdatedTo": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "errorUpdatingBookingStatus": "خطأ في تحديث حالة الحجز",
+  "failedToOpenNavigation": "فشل في فتح الملاحة",
+  
+  "errorLoadingBookingDetails": "خطأ في تحميل تفاصيل الحجز",
+  "providerInformationNotAvailable": "معلومات المزود غير متوفرة",
+  "pleaseSelectRating": "يرجى اختيار تقييم",
+  "ratingSubmittedSuccessfully": "تم إرسال التقييم بنجاح",
+  "errorSubmittingRating": "خطأ في إرسال التقييم",
+  "confirmAction": "تأكيد {action}",
+  "@confirmAction": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "areYouSureActionBooking": "هل أنت متأكد من {action} هذا الحجز؟",
+  "@areYouSureActionBooking": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelBooking": "إلغاء الحجز",
+  "accept": "قبول",
+  "decline": "رفض",
+  "startService": "بدء الخدمة",
+  "completeService": "إكمال الخدمة",
+  "bookingActionSuccessfully": "تم {action} الحجز بنجاح.",
+  "@bookingActionSuccessfully": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelled": "ملغي",
+  "accepted": "مقبول",
+  "declined": "مرفوض",
+  "markedAsInProgress": "محدد كقيد التنفيذ",
+  "markedAsCompleted": "محدد كمكتمل",
+  "updated": "محدث",
+  "cancelledByUser": "ملغي من قبل المستخدم",
+  "cancelledByProvider": "ملغي من قبل المزود",
+  "declinedByProvider": "مرفوض من قبل المزود",
+  "providerStatusUpdatedTo": "تم تحديث حالة المزود إلى",
+  "selectLocation": "اختر الموقع",
+  "locationPickerTitle": "اختر موقعك",
+  "locationPickerSubtitle": "انقر على الخريطة لتعيين موقعك الدقيق",
+  "currentLocation": "الموقع الحالي",
+  "searchLocation": "البحث عن موقع",
+  "locationSelected": "تم اختيار الموقع بنجاح",
+  "locationError": "خطأ في الحصول على الموقع"
 }

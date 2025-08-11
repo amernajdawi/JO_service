@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/booking_service.dart';
@@ -41,11 +42,12 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
       _currentProviderId = await _authService.getUserId();
 
       if (token == null || token.isEmpty || _currentProviderId == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Authentication token is missing.')),
-          );
-        }
+              if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.authenticationTokenMissing)),
+        );
+      }
         setState(() => _isLoading = false);
         return;
       }
@@ -61,8 +63,9 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load conversations: $e')),
+          SnackBar(content: Text('${l10n.failedToLoadConversations}: $e')),
         );
         setState(() {
           _isLoading = false;
@@ -73,14 +76,15 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
       appBar: AppBar(
-        title: const Text(
-          'Messages',
-          style: TextStyle(
+        title: Text(
+          l10n.providerMessagesTitle,
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.5,
@@ -92,7 +96,7 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadConversations,
-            tooltip: 'Refresh',
+            tooltip: l10n.refresh,
           ),
         ],
       ),
@@ -105,6 +109,7 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
   }
 
   Widget _buildEmptyState(bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -116,7 +121,7 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No messages yet',
+            l10n.noMessagesYet,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w600,
@@ -125,7 +130,7 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'When customers message you, their conversations will appear here',
+            l10n.noConversationsMessage,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -136,7 +141,7 @@ class _ProviderMessagesScreenState extends State<ProviderMessagesScreen> {
           ElevatedButton.icon(
             onPressed: _loadConversations,
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh'),
+            label: Text(l10n.refresh),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),

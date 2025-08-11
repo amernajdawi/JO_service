@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../models/provider_model.dart';
-import './role_selection_screen.dart';
+import '../l10n/app_localizations.dart';
+import './user_login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for admin token
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -123,7 +124,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Provider status updated to $newStatus'),
+          content: Text('${AppLocalizations.of(context)!.providerStatusUpdatedTo} $newStatus'),
           backgroundColor: const Color(0xFF34C759),
           behavior: SnackBarBehavior.floating,
         ),
@@ -174,7 +175,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             await prefs.remove('admin_token');
             await prefs.remove('admin_email');
             
-            Navigator.of(context).pushReplacementNamed('/role-selection');
+            Navigator.of(context).pushReplacementNamed(UserLoginScreen.routeName);
           },
         ),
         title: Column(

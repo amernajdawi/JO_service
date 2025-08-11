@@ -7,11 +7,11 @@ import '../models/chat_conversation.dart';
 class ConversationService {
   static String getBaseUrl() {
     if (kIsWeb) {
-      return 'http://localhost:3000';
+      return 'http://localhost:3001';
     } else if (Platform.isIOS) {
-      return 'http://10.46.6.230:3000'; // Updated to current network IP
+              return 'http://10.46.6.68:3001'; // Updated to current network IP
     } else {
-      return 'http://10.0.2.2:3000';
+              return 'http://10.0.2.2:3001';
     }
   }
 

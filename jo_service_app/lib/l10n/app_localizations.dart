@@ -221,7 +221,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminDescription.
   ///
   /// In en, this message translates to:
-  /// **'Manage users and providers'**
+  /// **'Service providers are managed through the admin panel - tap the admin icon above'**
   String get adminDescription;
 
   /// No description provided for @home.
@@ -317,7 +317,7 @@ abstract class AppLocalizations {
   /// No description provided for @services.
   ///
   /// In en, this message translates to:
-  /// **'Services'**
+  /// **'Services (comma separated)'**
   String get services;
 
   /// No description provided for @reviews.
@@ -335,7 +335,7 @@ abstract class AppLocalizations {
   /// No description provided for @hourlyRate.
   ///
   /// In en, this message translates to:
-  /// **'Hourly Rate'**
+  /// **'Hourly Rate (\$)'**
   String get hourlyRate;
 
   /// No description provided for @rating.
@@ -431,13 +431,13 @@ abstract class AppLocalizations {
   /// No description provided for @accepted.
   ///
   /// In en, this message translates to:
-  /// **'Accepted'**
+  /// **'accepted'**
   String get accepted;
 
   /// No description provided for @declined.
   ///
   /// In en, this message translates to:
-  /// **'Declined'**
+  /// **'declined'**
   String get declined;
 
   /// No description provided for @inProgress.
@@ -455,7 +455,7 @@ abstract class AppLocalizations {
   /// No description provided for @cancelled.
   ///
   /// In en, this message translates to:
-  /// **'Cancelled'**
+  /// **'cancelled'**
   String get cancelled;
 
   /// No description provided for @createBooking.
@@ -625,6 +625,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Punctuality'**
   String get punctuality;
+
+  /// No description provided for @notificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Settings'**
+  String get notificationSettings;
+
+  /// No description provided for @notificationPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Preferences'**
+  String get notificationPreferences;
+
+  /// No description provided for @notificationPreferencesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which notifications you want to receive'**
+  String get notificationPreferencesDescription;
+
+  /// No description provided for @bookingUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Updates'**
+  String get bookingUpdates;
+
+  /// No description provided for @bookingUpdatesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive notifications about booking status changes'**
+  String get bookingUpdatesDescription;
+
+  /// No description provided for @chatMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Messages'**
+  String get chatMessages;
+
+  /// No description provided for @chatMessagesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive notifications for new chat messages'**
+  String get chatMessagesDescription;
+
+  /// No description provided for @ratings.
+  ///
+  /// In en, this message translates to:
+  /// **'Ratings'**
+  String get ratings;
+
+  /// No description provided for @ratingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive notifications for new ratings and reviews'**
+  String get ratingsDescription;
+
+  /// No description provided for @promotions.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotions'**
+  String get promotions;
+
+  /// No description provided for @promotionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive notifications about special offers and promotions'**
+  String get promotionsDescription;
+
+  /// No description provided for @saveSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Settings'**
+  String get saveSettings;
+
+  /// No description provided for @testNotificationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification sent successfully'**
+  String get testNotificationSent;
+
+  /// No description provided for @errorSendingTestNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Error sending test notification'**
+  String get errorSendingTestNotification;
+
+  /// No description provided for @settingsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings saved successfully'**
+  String get settingsSaved;
+
+  /// No description provided for @errorSavingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Error saving settings'**
+  String get errorSavingSettings;
+
+  /// No description provided for @sendTestNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Test Notification'**
+  String get sendTestNotification;
+
+  /// No description provided for @notificationInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Information'**
+  String get notificationInfo;
+
+  /// No description provided for @notificationInfoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You can control which notifications you receive. Disabling notifications may cause you to miss important updates about your bookings and messages.'**
+  String get notificationInfoDescription;
 
   /// No description provided for @workQuality.
   ///
@@ -829,6 +943,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Verify Provider'**
   String get verifyProvider;
+
+  /// No description provided for @resendVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Verification'**
+  String get resendVerification;
+
+  /// No description provided for @resendVerificationEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Verification Email'**
+  String get resendVerificationEmail;
+
+  /// No description provided for @verificationEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification email sent!'**
+  String get verificationEmailSent;
+
+  /// No description provided for @accountNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Account not verified'**
+  String get accountNotVerified;
+
+  /// No description provided for @pleaseVerifyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your email and phone number before logging in.'**
+  String get pleaseVerifyAccount;
+
+  /// No description provided for @verifyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Account'**
+  String get verifyAccount;
 
   /// No description provided for @rejectProvider.
   ///
@@ -1433,7 +1583,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatWith.
   ///
   /// In en, this message translates to:
-  /// **'Chat with {name}'**
+  /// **'Chat with'**
   String chatWith(String name);
 
   /// No description provided for @startTyping.
@@ -1513,6 +1663,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to cancel this booking?'**
   String get areYouSureCancelBooking;
+
+  /// No description provided for @advancedSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Search'**
+  String get advancedSearch;
+
+  /// No description provided for @filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filters;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAll;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @minimumRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum Rating'**
+  String get minimumRating;
+
+  /// No description provided for @maxPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Price'**
+  String get maxPrice;
+
+  /// No description provided for @maxDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Distance'**
+  String get maxDistance;
+
+  /// No description provided for @onlyAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Only Available'**
+  String get onlyAvailable;
+
+  /// No description provided for @serviceTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Tags'**
+  String get serviceTags;
+
+  /// No description provided for @sortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort By'**
+  String get sortBy;
+
+  /// No description provided for @order.
+  ///
+  /// In en, this message translates to:
+  /// **'Order'**
+  String get order;
+
+  /// No description provided for @ascending.
+  ///
+  /// In en, this message translates to:
+  /// **'Ascending'**
+  String get ascending;
+
+  /// No description provided for @descending.
+  ///
+  /// In en, this message translates to:
+  /// **'Descending'**
+  String get descending;
+
+  /// No description provided for @price.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get price;
+
+  /// No description provided for @distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get distance;
+
+  /// No description provided for @results.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get results;
+
+  /// No description provided for @page.
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get page;
+
+  /// No description provided for @searching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching...'**
+  String get searching;
+
+  /// No description provided for @tryAdjustingFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your filters'**
+  String get tryAdjustingFilters;
+
+  /// No description provided for @searchProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Providers'**
+  String get searchProviders;
+
+  /// No description provided for @useMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Use My Location'**
+  String get useMyLocation;
+
+  /// No description provided for @locationNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Location not available'**
+  String get locationNotAvailable;
 
   /// No description provided for @unknownStatus.
   ///
@@ -1697,7 +1979,7 @@ abstract class AppLocalizations {
   /// No description provided for @startConversation.
   ///
   /// In en, this message translates to:
-  /// **'Start a conversation with your service providers'**
+  /// **'Start conversation'**
   String get startConversation;
 
   /// No description provided for @searchMessages.
@@ -2401,6 +2683,696 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deleting account...'**
   String get deletingAccount;
+
+  /// No description provided for @languageChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Language changed successfully'**
+  String get languageChanged;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @authenticationTokenMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication token missing'**
+  String get authenticationTokenMissing;
+
+  /// No description provided for @failedToLoadConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load conversations'**
+  String get failedToLoadConversations;
+
+  /// No description provided for @errorUploadingProfilePicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Error uploading profile picture'**
+  String get errorUploadingProfilePicture;
+
+  /// No description provided for @errorUpdatingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Error updating profile'**
+  String get errorUpdatingProfile;
+
+  /// No description provided for @failedToOpenNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open navigation'**
+  String get failedToOpenNavigation;
+
+  /// No description provided for @bookingStatusUpdatedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking status updated to {status}'**
+  String bookingStatusUpdatedTo(String status);
+
+  /// No description provided for @errorUpdatingBookingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Error updating booking status'**
+  String get errorUpdatingBookingStatus;
+
+  /// No description provided for @editProfileAuthenticationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication error. Please login again.'**
+  String get editProfileAuthenticationError;
+
+  /// No description provided for @editProfileErrorLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading profile: {error}'**
+  String editProfileErrorLoading(String error);
+
+  /// No description provided for @editProfileImageUploadWebNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Image upload is not supported on web. Please use the mobile app.'**
+  String get editProfileImageUploadWebNotSupported;
+
+  /// No description provided for @editProfileErrorPickingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error picking image: {error}'**
+  String editProfileErrorPickingImage(String error);
+
+  /// No description provided for @editProfileCameraWebNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera is not supported on web. Please use the mobile app.'**
+  String get editProfileCameraWebNotSupported;
+
+  /// No description provided for @editProfileErrorTakingPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Error taking photo: {error}'**
+  String editProfileErrorTakingPhoto(String error);
+
+  /// No description provided for @editProfileBusinessProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Profile'**
+  String get editProfileBusinessProfile;
+
+  /// No description provided for @editProfileUpdateBusinessInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your business information and photo'**
+  String get editProfileUpdateBusinessInfo;
+
+  /// No description provided for @editProfileUploadPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Photo'**
+  String get editProfileUploadPhoto;
+
+  /// No description provided for @editProfileBusinessName.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Name'**
+  String get editProfileBusinessName;
+
+  /// No description provided for @editProfileBusinessNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Business name is required'**
+  String get editProfileBusinessNameRequired;
+
+  /// No description provided for @editProfileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get editProfileDescription;
+
+  /// No description provided for @editProfileDescriptionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Description is required'**
+  String get editProfileDescriptionRequired;
+
+  /// No description provided for @editProfileServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Services (comma separated)'**
+  String get editProfileServices;
+
+  /// No description provided for @editProfileServicesRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Services are required'**
+  String get editProfileServicesRequired;
+
+  /// No description provided for @editProfileHourlyRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Hourly Rate (\$)'**
+  String get editProfileHourlyRate;
+
+  /// No description provided for @editProfileHourlyRateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Hourly rate is required'**
+  String get editProfileHourlyRateRequired;
+
+  /// No description provided for @editProfileEnterValidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid number'**
+  String get editProfileEnterValidNumber;
+
+  /// No description provided for @editProfilePhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get editProfilePhoneNumber;
+
+  /// No description provided for @editProfilePhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get editProfilePhoneRequired;
+
+  /// No description provided for @editProfileAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get editProfileAddress;
+
+  /// No description provided for @editProfileAddressRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Address is required'**
+  String get editProfileAddressRequired;
+
+  /// No description provided for @editProfileSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get editProfileSaveChanges;
+
+  /// No description provided for @nowAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You are now available for bookings'**
+  String get nowAvailable;
+
+  /// No description provided for @nowUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You are now unavailable for bookings'**
+  String get nowUnavailable;
+
+  /// No description provided for @availabilityStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability Status'**
+  String get availabilityStatus;
+
+  /// No description provided for @availableForBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'You are available for new bookings'**
+  String get availableForBookings;
+
+  /// No description provided for @currentlyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You are currently unavailable'**
+  String get currentlyUnavailable;
+
+  /// No description provided for @providerBookingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Bookings'**
+  String get providerBookingsTitle;
+
+  /// No description provided for @allBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'All Bookings'**
+  String get allBookings;
+
+  /// No description provided for @pendingBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingBookings;
+
+  /// No description provided for @acceptedBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get acceptedBookings;
+
+  /// No description provided for @inProgressBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get inProgressBookings;
+
+  /// No description provided for @completedBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedBookings;
+
+  /// No description provided for @cancelledBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelledBookings;
+
+  /// No description provided for @rejectedBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get rejectedBookings;
+
+  /// No description provided for @noBookingsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No bookings found for this filter'**
+  String get noBookingsMessage;
+
+  /// No description provided for @loadingBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading bookings...'**
+  String get loadingBookings;
+
+  /// No description provided for @refreshBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Bookings'**
+  String get refreshBookings;
+
+  /// No description provided for @newBookingsReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} new booking(s) received!'**
+  String newBookingsReceived(int count);
+
+  /// No description provided for @bookingFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking from'**
+  String get bookingFrom;
+
+  /// No description provided for @requestedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested on'**
+  String get requestedOn;
+
+  /// No description provided for @scheduledFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled for'**
+  String get scheduledFor;
+
+  /// No description provided for @estimatedDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Duration'**
+  String get estimatedDuration;
+
+  /// No description provided for @totalAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Amount'**
+  String get totalAmount;
+
+  /// No description provided for @rejectBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject Booking'**
+  String get rejectBooking;
+
+  /// No description provided for @markInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Work'**
+  String get markInProgress;
+
+  /// No description provided for @markCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Work'**
+  String get markCompleted;
+
+  /// No description provided for @bookingAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking accepted'**
+  String get bookingAccepted;
+
+  /// No description provided for @bookingRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking rejected'**
+  String get bookingRejected;
+
+  /// No description provided for @bookingMarkedInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Work started'**
+  String get bookingMarkedInProgress;
+
+  /// No description provided for @bookingMarkedCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Work completed'**
+  String get bookingMarkedCompleted;
+
+  /// No description provided for @errorUpdatingBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Error updating booking'**
+  String get errorUpdatingBooking;
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load More'**
+  String get loadMore;
+
+  /// No description provided for @noMoreBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'No more bookings'**
+  String get noMoreBookings;
+
+  /// No description provided for @providerMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get providerMessagesTitle;
+
+  /// No description provided for @conversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get conversations;
+
+  /// No description provided for @noConversationsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations found'**
+  String get noConversationsFound;
+
+  /// No description provided for @noConversationsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations started yet. Customer messages will appear here.'**
+  String get noConversationsMessage;
+
+  /// No description provided for @loadingConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading conversations...'**
+  String get loadingConversations;
+
+  /// No description provided for @errorLoadingConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading conversations'**
+  String get errorLoadingConversations;
+
+  /// No description provided for @lastMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Last message'**
+  String get lastMessage;
+
+  /// No description provided for @newMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get newMessage;
+
+  /// No description provided for @unreadMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread messages'**
+  String get unreadMessages;
+
+  /// No description provided for @openChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Chat'**
+  String get openChat;
+
+  /// No description provided for @messagePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Message preview'**
+  String get messagePreview;
+
+  /// No description provided for @editProviderProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get editProviderProfileTitle;
+
+  /// No description provided for @businessProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Profile'**
+  String get businessProfile;
+
+  /// No description provided for @updateBusinessInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your business information and photo'**
+  String get updateBusinessInfo;
+
+  /// No description provided for @uploadPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Photo'**
+  String get uploadPhoto;
+
+  /// No description provided for @businessName.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Name'**
+  String get businessName;
+
+  /// No description provided for @businessNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Business name is required'**
+  String get businessNameRequired;
+
+  /// No description provided for @descriptionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Description is required'**
+  String get descriptionRequired;
+
+  /// No description provided for @servicesRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Services are required'**
+  String get servicesRequired;
+
+  /// No description provided for @enterValidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid number'**
+  String get enterValidNumber;
+
+  /// No description provided for @phoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get phoneRequired;
+
+  /// No description provided for @addressRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Address is required'**
+  String get addressRequired;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @imageUploadWebNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Image upload is not supported on web. Please use the mobile app.'**
+  String get imageUploadWebNotSupported;
+
+  /// No description provided for @cameraWebNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera is not supported on web. Please use the mobile app.'**
+  String get cameraWebNotSupported;
+
+  /// No description provided for @errorTakingPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Error taking photo'**
+  String get errorTakingPhoto;
+
+  /// No description provided for @openInGoogleMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Google Maps'**
+  String get openInGoogleMaps;
+
+  /// No description provided for @accept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get accept;
+
+  /// No description provided for @decline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get decline;
+
+  /// No description provided for @errorLoadingBookingDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading booking details'**
+  String get errorLoadingBookingDetails;
+
+  /// No description provided for @providerInformationNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider information not available'**
+  String get providerInformationNotAvailable;
+
+  /// No description provided for @pleaseSelectRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a rating'**
+  String get pleaseSelectRating;
+
+  /// No description provided for @ratingSubmittedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating submitted successfully'**
+  String get ratingSubmittedSuccessfully;
+
+  /// No description provided for @errorSubmittingRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Error submitting rating'**
+  String get errorSubmittingRating;
+
+  /// No description provided for @confirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm {action}'**
+  String confirmAction(String action);
+
+  /// No description provided for @areYouSureActionBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to {action} this booking?'**
+  String areYouSureActionBooking(String action);
+
+  /// No description provided for @bookingActionSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking {action} successfully.'**
+  String bookingActionSuccessfully(String action);
+
+  /// No description provided for @markedAsInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'marked as in progress'**
+  String get markedAsInProgress;
+
+  /// No description provided for @markedAsCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'marked as completed'**
+  String get markedAsCompleted;
+
+  /// No description provided for @updated.
+  ///
+  /// In en, this message translates to:
+  /// **'updated'**
+  String get updated;
+
+  /// No description provided for @cancelledByUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled by User'**
+  String get cancelledByUser;
+
+  /// No description provided for @cancelledByProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled by Provider'**
+  String get cancelledByProvider;
+
+  /// No description provided for @declinedByProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined by Provider'**
+  String get declinedByProvider;
+
+  /// No description provided for @providerStatusUpdatedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider status updated to'**
+  String get providerStatusUpdatedTo;
+
+  /// No description provided for @selectLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Location'**
+  String get selectLocation;
+
+  /// No description provided for @locationPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Location'**
+  String get locationPickerTitle;
+
+  /// No description provided for @locationPickerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap on the map to set your exact location'**
+  String get locationPickerSubtitle;
+
+  /// No description provided for @currentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Location'**
+  String get currentLocation;
+
+  /// No description provided for @searchLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a location'**
+  String get searchLocation;
+
+  /// No description provided for @locationSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Location selected successfully'**
+  String get locationSelected;
+
+  /// No description provided for @locationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error getting location'**
+  String get locationError;
 }
 
 class _AppLocalizationsDelegate

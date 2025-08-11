@@ -4,9 +4,11 @@ import 'package:provider/provider.dart' as provider_package;
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../models/provider_model.dart';
+import '../widgets/location_picker.dart';
 
 class EditProviderProfileScreen extends StatefulWidget {
   const EditProviderProfileScreen({super.key});
@@ -34,6 +36,11 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
   String _originalHourlyRate = '';
   String _originalPhone = '';
   String _originalAddress = '';
+  
+  // Location data
+  double? _latitude;
+  double? _longitude;
+  String _selectedAddress = '';
 
   // Form controllers
   final _businessNameController = TextEditingController();
@@ -133,7 +140,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
       if (token == null || userId == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Authentication error. Please login again.')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.editProfileAuthenticationError)),
           );
         }
         setState(() {
@@ -152,6 +159,18 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
           _hourlyRateController.text = provider.hourlyRate?.toString() ?? '';
           _phoneController.text = provider.contactInfo?.phone ?? '';
           _addressController.text = provider.location?.addressText ?? '';
+          _selectedAddress = provider.location?.addressText ?? '';
+          if (provider.location?.coordinates != null && provider.location!.coordinates!.length >= 2) {
+            _longitude = provider.location!.coordinates![0];
+            _latitude = provider.location!.coordinates![1];
+            
+            // Log loaded location data
+            print('📍 Location Data Loaded:');
+            print('   Address: ${provider.location?.addressText}');
+            print('   Coordinates: ${provider.location?.coordinates}');
+            print('   Latitude: $_latitude');
+            print('   Longitude: $_longitude');
+          }
           _currentProfilePictureUrl = provider.profilePictureUrl;
           _isLoading = false;
         });
@@ -162,7 +181,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.editProfileErrorLoading(e.toString()))),
         );
       }
     }
@@ -171,8 +190,8 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
   Future<void> _pickImage() async {
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image upload is not supported on web. Please use the mobile app.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.editProfileImageUploadWebNotSupported),
           backgroundColor: Color(0xFFFF3B30),
         ),
       );
@@ -195,7 +214,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error picking image: $e'),
+          content: Text(AppLocalizations.of(context)!.editProfileErrorPickingImage(e.toString())),
           backgroundColor: const Color(0xFFFF3B30),
         ),
       );
@@ -205,8 +224,8 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
   Future<void> _takePhoto() async {
     if (kIsWeb) {
         ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Camera is not supported on web. Please use the mobile app.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.editProfileCameraWebNotSupported),
           backgroundColor: Color(0xFFFF3B30),
         ),
       );
@@ -229,7 +248,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error taking photo: $e'),
+          content: Text(AppLocalizations.of(context)!.editProfileErrorTakingPhoto(e.toString())),
           backgroundColor: const Color(0xFFFF3B30),
         ),
       );
@@ -249,8 +268,8 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
 
       if (token == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-            content: Text('Authentication error. Please login again.'),
+            SnackBar(
+            content: Text(AppLocalizations.of(context)!.editProfileAuthenticationError),
             backgroundColor: Color(0xFFFF3B30),
           ),
           );
@@ -266,10 +285,11 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
           _isUploading = false;
         });
 
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile picture uploaded successfully!'),
-            backgroundColor: Color(0xFF34C759),
+          SnackBar(
+            content: Text(l10n.profilePictureUploadedSuccessfully),
+            backgroundColor: const Color(0xFF34C759),
           ),
         );
       }
@@ -277,9 +297,10 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
       setState(() {
         _isUploading = false;
       });
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error uploading profile picture: $e'),
+          content: Text('${l10n.errorUploadingProfilePicture}: $e'),
           backgroundColor: const Color(0xFFFF3B30),
         ),
       );
@@ -300,8 +321,9 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
 
 
       if (token == null || userId == null) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Authentication error. Please login again.')),
+          SnackBar(content: Text(l10n.authenticationErrorPleaseLogin)),
         );
         setState(() {
           _isSaving = false;
@@ -316,10 +338,40 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
         'serviceType': _servicesController.text.trim(),
         'hourlyRate': double.tryParse(_hourlyRateController.text) ?? 0.0,
         'phoneNumber': _phoneController.text.trim(), // Backend expects 'phoneNumber' as direct field
-        'location': {'address': _addressController.text.trim()}, // Backend expects 'address' not 'addressText'
+        'location': {
+          'address': _selectedAddress.isNotEmpty ? _selectedAddress : _addressController.text.trim(),
+          'coordinates': _latitude != null && _longitude != null ? [_longitude!, _latitude!] : null,
+        },
       };
 
+      // Log the location data being sent
+      final locationData = updatedData['location'] as Map<String, dynamic>?;
+      print('📍 Location Data Being Sent:');
+      print('   Address: ${locationData?['address']}');
+      print('   Coordinates: ${locationData?['coordinates']}');
+      print('   Latitude: $_latitude');
+      print('   Longitude: $_longitude');
+
+      // First update the profile data
       final updatedProvider = await _apiService.updateMyProviderProfile(token, updatedData);
+      
+      // If we have coordinates, also update the location separately
+      Map<String, dynamic>? locationUpdateResponse;
+      if (_latitude != null && _longitude != null) {
+        try {
+          locationUpdateResponse = await _apiService.updateProviderLocation(token, {
+            'coordinates': [_longitude!, _latitude!],
+            'address': _selectedAddress.isNotEmpty ? _selectedAddress : _addressController.text.trim(),
+            'city': 'Amman', // Default city
+            'country': 'US'
+          });
+          print('📍 Location coordinates updated successfully');
+          print('📍 Location response: $locationUpdateResponse');
+        } catch (e) {
+          print('⚠️ Warning: Failed to update location coordinates: $e');
+          // Don't fail the entire save if location update fails
+        }
+      }
 
       // Update form with server response, but use sent data for phone and address since server doesn't return them
       setState(() {
@@ -334,10 +386,32 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
         _isSaving = false;
       });
 
+      final l10n = AppLocalizations.of(context)!;
+      
+      // Create success message with location info
+      String successMessage = l10n.profileUpdatedSuccessfully;
+      
+      // Add provider name to the message
+      String providerName = updatedProvider.fullName ?? updatedProvider.companyName ?? 'Provider';
+      
+      // Add location update confirmation if coordinates were saved
+      if (_latitude != null && _longitude != null && locationUpdateResponse != null) {
+        final locationProvider = locationUpdateResponse['provider'];
+        if (locationProvider != null) {
+          final locationProviderName = locationProvider['fullName'] ?? locationProvider['businessName'] ?? locationProvider['companyName'] ?? 'Provider';
+          successMessage = '✅ Profile updated successfully for $locationProviderName\n📍 Location saved with GPS coordinates';
+        } else {
+          successMessage = '✅ Profile updated successfully for $providerName\n📍 Location saved with GPS coordinates';
+        }
+      } else {
+        successMessage = '✅ Profile updated successfully for $providerName';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully!'),
-          backgroundColor: Color(0xFF34C759),
+        SnackBar(
+          content: Text(successMessage),
+          backgroundColor: const Color(0xFF34C759),
+          duration: const Duration(seconds: 3),
         ),
       );
 
@@ -346,16 +420,179 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
       setState(() {
         _isSaving = false;
       });
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error updating profile: $e'),
+          content: Text('${l10n.errorUpdatingProfile}: $e'),
           backgroundColor: const Color(0xFFFF3B30),
         ),
       );
     }
   }
 
+  void _showLocationPicker() {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.selectLocation,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: LocationPicker(
+                initialAddress: _selectedAddress.isNotEmpty ? _selectedAddress : _addressController.text,
+                onLocationSelected: (address, latitude, longitude) {
+                  setState(() {
+                    _selectedAddress = address;
+                    _latitude = latitude;
+                    _longitude = longitude;
+                    _addressController.text = address;
+                  });
+                  
+                  // Show confirmation dialog
+                  final l10n = AppLocalizations.of(context)!;
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('📍 Location Selected'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Address: $address'),
+                          const SizedBox(height: 8),
+                          Text('Coordinates: ${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}'),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF34C759).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '✅ Location will be saved when you tap "Save Changes"',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF34C759),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                  
+                  Navigator.pop(context); // Close location picker
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLocationInfo() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('📍 Location Information'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Address: ${_selectedAddress.isNotEmpty ? _selectedAddress : _addressController.text}'),
+            const SizedBox(height: 8),
+            if (_latitude != null && _longitude != null) ...[
+              Text('Latitude: ${_latitude!.toStringAsFixed(6)}'),
+              const SizedBox(height: 4),
+              Text('Longitude: ${_longitude!.toStringAsFixed(6)}'),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF34C759).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '✅ GPS coordinates are saved and will be used for distance calculations',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF34C759),
+                  ),
+                ),
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9500).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '⚠️ No GPS coordinates saved. Tap the map icon to set your exact location.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFFF9500),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showImagePickerDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -379,7 +616,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
             const SizedBox(height: 20),
             ListTile(
               leading: const Icon(Icons.photo_library, color: Color(0xFF007AFF)),
-              title: const Text('Choose from Gallery'),
+              title: Text(l10n.chooseFromGallery),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage();
@@ -387,7 +624,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Color(0xFF007AFF)),
-              title: const Text('Take Photo'),
+              title: Text(l10n.takePhoto),
               onTap: () {
                 Navigator.pop(context);
                 _takePhoto();
@@ -402,6 +639,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -446,7 +684,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                             ),
                             Expanded(
                               child: Text(
-                                'Edit Profile',
+                                l10n.editProviderProfileTitle,
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.w700,
@@ -609,7 +847,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'Business Profile',
+                                      AppLocalizations.of(context)!.editProfileBusinessProfile,
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.w700,
@@ -618,7 +856,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Update your business information and photo',
+                                      AppLocalizations.of(context)!.editProfileUpdateBusinessInfo,
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: isDark ? Colors.white54 : const Color(0xFF8E8E93),
@@ -660,9 +898,9 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                                                         strokeWidth: 2,
                                                       ),
                                                     )
-                                                  : const Text(
-                                                      'Upload Photo',
-                                                      style: TextStyle(
+                                                  : Text(
+                                                      l10n.uploadPhoto,
+                                                      style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 16,
                                                         fontWeight: FontWeight.w600,
@@ -682,11 +920,11 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                               // Business Name
                               _buildInputField(
                                 controller: _businessNameController,
-                                label: 'Business Name',
+                                label: l10n.businessName,
                                 icon: Icons.business_rounded,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return 'Business name is required';
+                                    return l10n.businessNameRequired;
                                   }
                                   return null;
                                 },
@@ -698,12 +936,12 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                               // Description
                               _buildInputField(
                                 controller: _descriptionController,
-                                label: 'Description',
+                                label: l10n.description,
                                 icon: Icons.description_rounded,
                                 maxLines: 3,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return 'Description is required';
+                                    return l10n.descriptionRequired;
                                   }
                                   return null;
                                 },
@@ -715,11 +953,11 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                               // Services
                               _buildInputField(
                                 controller: _servicesController,
-                                label: 'Services (comma separated)',
+                                label: l10n.services,
                                 icon: Icons.miscellaneous_services_rounded,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return 'Services are required';
+                                    return l10n.servicesRequired;
                                   }
                                   return null;
                                 },
@@ -731,15 +969,15 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                               // Hourly Rate
                               _buildInputField(
                                 controller: _hourlyRateController,
-                                label: 'Hourly Rate (\$)',
+                                label: l10n.hourlyRate,
                                 icon: Icons.attach_money_rounded,
                                 keyboardType: TextInputType.number,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return 'Hourly rate is required';
+                                    return l10n.hourlyRateRequired;
                                   }
                                   if (double.tryParse(value) == null) {
-                                    return 'Please enter a valid number';
+                                    return l10n.enterValidNumber;
                                   }
                                   return null;
                                 },
@@ -751,12 +989,12 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                               // Phone
                               _buildInputField(
                                 controller: _phoneController,
-                                label: 'Phone Number',
+                                label: l10n.phoneNumber,
                                 icon: Icons.phone_rounded,
                                 keyboardType: TextInputType.phone,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return 'Phone number is required';
+                                    return l10n.phoneRequired;
                                   }
                                   return null;
                                 },
@@ -765,19 +1003,106 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                               
                               const SizedBox(height: 16),
                               
-                              // Address
-                              _buildInputField(
-                                controller: _addressController,
-                                label: 'Address',
-                                icon: Icons.location_on_rounded,
-                                maxLines: 2,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Address is required';
-                                  }
-                                  return null;
-                                },
-                                isDark: isDark,
+                              // Location
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isDark 
+                                        ? Colors.black.withOpacity(0.1)
+                                        : Colors.grey.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 16, top: 16, right: 16),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.location_on_rounded,
+                                            color: isDark ? Colors.white70 : const Color(0xFF8E8E93),
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            l10n.address,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: isDark ? Colors.white70 : const Color(0xFF8E8E93),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  _selectedAddress.isNotEmpty ? _selectedAddress : _addressController.text,
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                                  ),
+                                                ),
+                                                if (_latitude != null && _longitude != null)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 4),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.location_on,
+                                                          size: 12,
+                                                          color: const Color(0xFF34C759),
+                                                        ),
+                                                        const SizedBox(width: 4),
+                                                        Text(
+                                                          'GPS: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: const Color(0xFF34C759),
+                                                            fontWeight: FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.map_rounded),
+                                                onPressed: _showLocationPicker,
+                                                color: const Color(0xFF007AFF),
+                                              ),
+                                              if (_latitude != null && _longitude != null)
+                                                IconButton(
+                                                  icon: const Icon(Icons.info_outline),
+                                                  onPressed: () => _showLocationInfo(),
+                                                  color: const Color(0xFF34C759),
+                                                  tooltip: 'Location Info',
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               
                               const SizedBox(height: 40),
@@ -816,9 +1141,9 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen>
                                                 strokeWidth: 2,
                                               ),
                                             )
-                                          : const Text(
-                                              'Save Changes',
-                                              style: TextStyle(
+                                          : Text(
+                                              l10n.saveChanges,
+                                              style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.w600,

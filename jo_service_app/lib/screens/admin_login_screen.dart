@@ -3,7 +3,7 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart'; // Add API service import
 import '../widgets/uber_input.dart';
 import './admin_dashboard_screen.dart';
-import './role_selection_screen.dart';
+import './user_login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add for storing admin token
 
@@ -103,7 +103,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             size: 20,
           ),
           onPressed: () {
-            Navigator.of(context).pushReplacementNamed('/role-selection');
+            Navigator.of(context).pushReplacementNamed(UserLoginScreen.routeName);
           },
         ),
         title: null,
@@ -338,7 +338,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   child: TextButton(
                     onPressed: () {
                       Navigator.of(context)
-                          .pushReplacementNamed(RoleSelectionScreen.routeName);
+                          .pushReplacementNamed(UserLoginScreen.routeName);
                     },
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

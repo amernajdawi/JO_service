@@ -69,7 +69,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerDescription => 'Provide services to customers';
 
   @override
-  String get adminDescription => 'Manage users and providers';
+  String get adminDescription =>
+      'Service providers are managed through the admin panel - tap the admin icon above';
 
   @override
   String get home => 'Home';
@@ -117,7 +118,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
-  String get services => 'Services';
+  String get services => 'Services (comma separated)';
 
   @override
   String get reviews => 'Reviews';
@@ -126,7 +127,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get availability => 'Availability';
 
   @override
-  String get hourlyRate => 'Hourly Rate';
+  String get hourlyRate => 'Hourly Rate (\$)';
 
   @override
   String get rating => 'Rating';
@@ -174,10 +175,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pending => 'Pending';
 
   @override
-  String get accepted => 'Accepted';
+  String get accepted => 'accepted';
 
   @override
-  String get declined => 'Declined';
+  String get declined => 'declined';
 
   @override
   String get inProgress => 'In Progress';
@@ -186,7 +187,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completed => 'Completed';
 
   @override
-  String get cancelled => 'Cancelled';
+  String get cancelled => 'cancelled';
 
   @override
   String get createBooking => 'Create Booking';
@@ -271,6 +272,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get punctuality => 'Punctuality';
+
+  @override
+  String get notificationSettings => 'Notification Settings';
+
+  @override
+  String get notificationPreferences => 'Notification Preferences';
+
+  @override
+  String get notificationPreferencesDescription =>
+      'Choose which notifications you want to receive';
+
+  @override
+  String get bookingUpdates => 'Booking Updates';
+
+  @override
+  String get bookingUpdatesDescription =>
+      'Receive notifications about booking status changes';
+
+  @override
+  String get chatMessages => 'Chat Messages';
+
+  @override
+  String get chatMessagesDescription =>
+      'Receive notifications for new chat messages';
+
+  @override
+  String get ratings => 'Ratings';
+
+  @override
+  String get ratingsDescription =>
+      'Receive notifications for new ratings and reviews';
+
+  @override
+  String get promotions => 'Promotions';
+
+  @override
+  String get promotionsDescription =>
+      'Receive notifications about special offers and promotions';
+
+  @override
+  String get saveSettings => 'Save Settings';
+
+  @override
+  String get testNotificationSent => 'Test notification sent successfully';
+
+  @override
+  String get errorSendingTestNotification => 'Error sending test notification';
+
+  @override
+  String get settingsSaved => 'Settings saved successfully';
+
+  @override
+  String get errorSavingSettings => 'Error saving settings';
+
+  @override
+  String get sendTestNotification => 'Send Test Notification';
+
+  @override
+  String get notificationInfo => 'Notification Information';
+
+  @override
+  String get notificationInfoDescription =>
+      'You can control which notifications you receive. Disabling notifications may cause you to miss important updates about your bookings and messages.';
 
   @override
   String get workQuality => 'Work Quality';
@@ -373,6 +437,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get verifyProvider => 'Verify Provider';
+
+  @override
+  String get resendVerification => 'Resend Verification';
+
+  @override
+  String get resendVerificationEmail => 'Resend Verification Email';
+
+  @override
+  String get verificationEmailSent => 'Verification email sent!';
+
+  @override
+  String get accountNotVerified => 'Account not verified';
+
+  @override
+  String get pleaseVerifyAccount =>
+      'Please verify your email and phone number before logging in.';
+
+  @override
+  String get verifyAccount => 'Verify Account';
 
   @override
   String get rejectProvider => 'Reject Provider';
@@ -681,7 +764,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chatWith(String name) {
-    return 'Chat with $name';
+    return 'Chat with';
   }
 
   @override
@@ -724,6 +807,72 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get areYouSureCancelBooking =>
       'Are you sure you want to cancel this booking?';
+
+  @override
+  String get advancedSearch => 'Advanced Search';
+
+  @override
+  String get filters => 'Filters';
+
+  @override
+  String get clearAll => 'Clear All';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get minimumRating => 'Minimum Rating';
+
+  @override
+  String get maxPrice => 'Max Price';
+
+  @override
+  String get maxDistance => 'Max Distance';
+
+  @override
+  String get onlyAvailable => 'Only Available';
+
+  @override
+  String get serviceTags => 'Service Tags';
+
+  @override
+  String get sortBy => 'Sort By';
+
+  @override
+  String get order => 'Order';
+
+  @override
+  String get ascending => 'Ascending';
+
+  @override
+  String get descending => 'Descending';
+
+  @override
+  String get price => 'Price';
+
+  @override
+  String get distance => 'Distance';
+
+  @override
+  String get results => 'Results';
+
+  @override
+  String get page => 'Page';
+
+  @override
+  String get searching => 'Searching...';
+
+  @override
+  String get tryAdjustingFilters => 'Try adjusting your filters';
+
+  @override
+  String get searchProviders => 'Search Providers';
+
+  @override
+  String get useMyLocation => 'Use My Location';
+
+  @override
+  String get locationNotAvailable => 'Location not available';
 
   @override
   String get unknownStatus => 'Unknown';
@@ -816,8 +965,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noMessagesYet => 'No messages yet';
 
   @override
-  String get startConversation =>
-      'Start a conversation with your service providers';
+  String get startConversation => 'Start conversation';
 
   @override
   String get searchMessages => 'Search messages';
@@ -1201,4 +1349,374 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deletingAccount => 'Deleting account...';
+
+  @override
+  String get languageChanged => 'Language changed successfully';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get authenticationTokenMissing => 'Authentication token missing';
+
+  @override
+  String get failedToLoadConversations => 'Failed to load conversations';
+
+  @override
+  String get errorUploadingProfilePicture => 'Error uploading profile picture';
+
+  @override
+  String get errorUpdatingProfile => 'Error updating profile';
+
+  @override
+  String get failedToOpenNavigation => 'Failed to open navigation';
+
+  @override
+  String bookingStatusUpdatedTo(String status) {
+    return 'Booking status updated to $status';
+  }
+
+  @override
+  String get errorUpdatingBookingStatus => 'Error updating booking status';
+
+  @override
+  String get editProfileAuthenticationError =>
+      'Authentication error. Please login again.';
+
+  @override
+  String editProfileErrorLoading(String error) {
+    return 'Error loading profile: $error';
+  }
+
+  @override
+  String get editProfileImageUploadWebNotSupported =>
+      'Image upload is not supported on web. Please use the mobile app.';
+
+  @override
+  String editProfileErrorPickingImage(String error) {
+    return 'Error picking image: $error';
+  }
+
+  @override
+  String get editProfileCameraWebNotSupported =>
+      'Camera is not supported on web. Please use the mobile app.';
+
+  @override
+  String editProfileErrorTakingPhoto(String error) {
+    return 'Error taking photo: $error';
+  }
+
+  @override
+  String get editProfileBusinessProfile => 'Business Profile';
+
+  @override
+  String get editProfileUpdateBusinessInfo =>
+      'Update your business information and photo';
+
+  @override
+  String get editProfileUploadPhoto => 'Upload Photo';
+
+  @override
+  String get editProfileBusinessName => 'Business Name';
+
+  @override
+  String get editProfileBusinessNameRequired => 'Business name is required';
+
+  @override
+  String get editProfileDescription => 'Description';
+
+  @override
+  String get editProfileDescriptionRequired => 'Description is required';
+
+  @override
+  String get editProfileServices => 'Services (comma separated)';
+
+  @override
+  String get editProfileServicesRequired => 'Services are required';
+
+  @override
+  String get editProfileHourlyRate => 'Hourly Rate (\$)';
+
+  @override
+  String get editProfileHourlyRateRequired => 'Hourly rate is required';
+
+  @override
+  String get editProfileEnterValidNumber => 'Please enter a valid number';
+
+  @override
+  String get editProfilePhoneNumber => 'Phone Number';
+
+  @override
+  String get editProfilePhoneRequired => 'Phone number is required';
+
+  @override
+  String get editProfileAddress => 'Address';
+
+  @override
+  String get editProfileAddressRequired => 'Address is required';
+
+  @override
+  String get editProfileSaveChanges => 'Save Changes';
+
+  @override
+  String get nowAvailable => 'You are now available for bookings';
+
+  @override
+  String get nowUnavailable => 'You are now unavailable for bookings';
+
+  @override
+  String get availabilityStatus => 'Availability Status';
+
+  @override
+  String get availableForBookings => 'You are available for new bookings';
+
+  @override
+  String get currentlyUnavailable => 'You are currently unavailable';
+
+  @override
+  String get providerBookingsTitle => 'Manage Bookings';
+
+  @override
+  String get allBookings => 'All Bookings';
+
+  @override
+  String get pendingBookings => 'Pending';
+
+  @override
+  String get acceptedBookings => 'Accepted';
+
+  @override
+  String get inProgressBookings => 'In Progress';
+
+  @override
+  String get completedBookings => 'Completed';
+
+  @override
+  String get cancelledBookings => 'Cancelled';
+
+  @override
+  String get rejectedBookings => 'Rejected';
+
+  @override
+  String get noBookingsMessage => 'No bookings found for this filter';
+
+  @override
+  String get loadingBookings => 'Loading bookings...';
+
+  @override
+  String get refreshBookings => 'Refresh Bookings';
+
+  @override
+  String newBookingsReceived(int count) {
+    return '$count new booking(s) received!';
+  }
+
+  @override
+  String get bookingFrom => 'Booking from';
+
+  @override
+  String get requestedOn => 'Requested on';
+
+  @override
+  String get scheduledFor => 'Scheduled for';
+
+  @override
+  String get estimatedDuration => 'Estimated Duration';
+
+  @override
+  String get totalAmount => 'Total Amount';
+
+  @override
+  String get rejectBooking => 'Reject Booking';
+
+  @override
+  String get markInProgress => 'Start Work';
+
+  @override
+  String get markCompleted => 'Complete Work';
+
+  @override
+  String get bookingAccepted => 'Booking accepted';
+
+  @override
+  String get bookingRejected => 'Booking rejected';
+
+  @override
+  String get bookingMarkedInProgress => 'Work started';
+
+  @override
+  String get bookingMarkedCompleted => 'Work completed';
+
+  @override
+  String get errorUpdatingBooking => 'Error updating booking';
+
+  @override
+  String get loadMore => 'Load More';
+
+  @override
+  String get noMoreBookings => 'No more bookings';
+
+  @override
+  String get providerMessagesTitle => 'Messages';
+
+  @override
+  String get conversations => 'Conversations';
+
+  @override
+  String get noConversationsFound => 'No conversations found';
+
+  @override
+  String get noConversationsMessage =>
+      'No conversations started yet. Customer messages will appear here.';
+
+  @override
+  String get loadingConversations => 'Loading conversations...';
+
+  @override
+  String get errorLoadingConversations => 'Error loading conversations';
+
+  @override
+  String get lastMessage => 'Last message';
+
+  @override
+  String get newMessage => 'New message';
+
+  @override
+  String get unreadMessages => 'Unread messages';
+
+  @override
+  String get openChat => 'Open Chat';
+
+  @override
+  String get messagePreview => 'Message preview';
+
+  @override
+  String get editProviderProfileTitle => 'Edit Profile';
+
+  @override
+  String get businessProfile => 'Business Profile';
+
+  @override
+  String get updateBusinessInfo => 'Update your business information and photo';
+
+  @override
+  String get uploadPhoto => 'Upload Photo';
+
+  @override
+  String get businessName => 'Business Name';
+
+  @override
+  String get businessNameRequired => 'Business name is required';
+
+  @override
+  String get descriptionRequired => 'Description is required';
+
+  @override
+  String get servicesRequired => 'Services are required';
+
+  @override
+  String get enterValidNumber => 'Please enter a valid number';
+
+  @override
+  String get phoneRequired => 'Phone number is required';
+
+  @override
+  String get addressRequired => 'Address is required';
+
+  @override
+  String get saveChanges => 'Save Changes';
+
+  @override
+  String get imageUploadWebNotSupported =>
+      'Image upload is not supported on web. Please use the mobile app.';
+
+  @override
+  String get cameraWebNotSupported =>
+      'Camera is not supported on web. Please use the mobile app.';
+
+  @override
+  String get errorTakingPhoto => 'Error taking photo';
+
+  @override
+  String get openInGoogleMaps => 'Open in Google Maps';
+
+  @override
+  String get accept => 'Accept';
+
+  @override
+  String get decline => 'Decline';
+
+  @override
+  String get errorLoadingBookingDetails => 'Error loading booking details';
+
+  @override
+  String get providerInformationNotAvailable =>
+      'Provider information not available';
+
+  @override
+  String get pleaseSelectRating => 'Please select a rating';
+
+  @override
+  String get ratingSubmittedSuccessfully => 'Rating submitted successfully';
+
+  @override
+  String get errorSubmittingRating => 'Error submitting rating';
+
+  @override
+  String confirmAction(String action) {
+    return 'Confirm $action';
+  }
+
+  @override
+  String areYouSureActionBooking(String action) {
+    return 'Are you sure you want to $action this booking?';
+  }
+
+  @override
+  String bookingActionSuccessfully(String action) {
+    return 'Booking $action successfully.';
+  }
+
+  @override
+  String get markedAsInProgress => 'marked as in progress';
+
+  @override
+  String get markedAsCompleted => 'marked as completed';
+
+  @override
+  String get updated => 'updated';
+
+  @override
+  String get cancelledByUser => 'Cancelled by User';
+
+  @override
+  String get cancelledByProvider => 'Cancelled by Provider';
+
+  @override
+  String get declinedByProvider => 'Declined by Provider';
+
+  @override
+  String get providerStatusUpdatedTo => 'Provider status updated to';
+
+  @override
+  String get selectLocation => 'Select Location';
+
+  @override
+  String get locationPickerTitle => 'Choose Your Location';
+
+  @override
+  String get locationPickerSubtitle =>
+      'Tap on the map to set your exact location';
+
+  @override
+  String get currentLocation => 'Current Location';
+
+  @override
+  String get searchLocation => 'Search for a location';
+
+  @override
+  String get locationSelected => 'Location selected successfully';
+
+  @override
+  String get locationError => 'Error getting location';
 }

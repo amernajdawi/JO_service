@@ -87,6 +87,11 @@ class Provider {
   final int? completedJobs;
   final DateTime? lastActive;
   final String? rejectionReason; // Reason for rejection if applicable
+  
+  // Advanced search fields
+  final bool? isAvailable;
+  final List<String>? serviceTags;
+  final List<String>? serviceAreas;
 
   Provider({
     this.id,
@@ -108,6 +113,9 @@ class Provider {
     this.completedJobs,
     this.lastActive,
     this.rejectionReason,
+    this.isAvailable,
+    this.serviceTags,
+    this.serviceAreas,
   });
 
   factory Provider.fromJson(Map<String, dynamic> json) {
@@ -167,6 +175,15 @@ class Provider {
       completedJobs: parseInt(json['completedJobs']) ?? 0,
       lastActive: parseDateTime(json['lastActive']),
       rejectionReason: json['rejectionReason'] as String?,
+      
+      // Advanced search fields
+      isAvailable: json['isAvailable'] as bool?,
+      serviceTags: json['serviceTags'] != null 
+          ? List<String>.from(json['serviceTags'])
+          : null,
+      serviceAreas: json['serviceAreas'] != null 
+          ? List<String>.from(json['serviceAreas'])
+          : null,
     );
   }
 
@@ -191,6 +208,9 @@ class Provider {
       'completedJobs': completedJobs,
       'lastActive': lastActive?.toIso8601String(),
       'rejectionReason': rejectionReason,
+      'isAvailable': isAvailable,
+      'serviceTags': serviceTags,
+      'serviceAreas': serviceAreas,
     };
   }
 
