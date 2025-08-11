@@ -14,7 +14,10 @@ const userSchema = new mongoose.Schema({
     },
     password: { // Renamed from password_hash for Mongoose convention, actual hashing happens pre-save
         type: String,
-        required: [true, 'Password is required'],
+        required: function() {
+            // Password is only required for local authentication (non-OAuth users)
+            return this.oauthProvider === 'local';
+        },
         minlength: [6, 'Password must be at least 6 characters long']
     },
     fullName: {
@@ -33,13 +36,70 @@ const userSchema = new mongoose.Schema({
         trim: true,
         default: '' // Default to an empty string or a path to a default avatar
     },
+    fcmToken: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    // Verification fields
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    isPhoneVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailVerificationToken: {
+        type: String,
+        default: null
+    },
+    phoneVerificationCode: {
+        type: String,
+        default: null
+    },
+    phoneVerificationExpires: {
+        type: Date,
+        default: null
+    },
+    // OAuth fields
+    oauthProvider: {
+        type: String,
+        enum: ['local', 'facebook', 'google'],
+        default: 'local'
+    },
+    oauthId: {
+        type: String,
+        default: null
+    },
+    // Account status
+    accountStatus: {
+        type: String,
+        enum: ['pending', 'active', 'suspended'],
+        default: 'pending'
+    },
+    // Verification rate limiting
+    verificationAttempts: {
+        email: { type: Number, default: 0 },
+        phone: { type: Number, default: 0 }
+    },
+    lastVerificationAttempt: {
+        email: { type: Date, default: null },
+        phone: { type: Date, default: null }
+    },
+    notificationSettings: {
+        bookingUpdates: { type: Boolean, default: true },
+        chatMessages: { type: Boolean, default: true },
+        ratings: { type: Boolean, default: true },
+        promotions: { type: Boolean, default: true }
+    },
     // Timestamps are automatically managed by Mongoose if { timestamps: true } is added to schema options
 }, { timestamps: true }); // Adds createdAt and updatedAt fields automatically
 
 // Pre-save hook to hash password
 userSchema.pre('save', async function(next) {
-    // Only hash the password if it has been modified (or is new)
-    if (!this.isModified('password')) return next();
+    // Only hash the password if it has been modified (or is new) and if it exists
+    if (!this.isModified('password') || !this.password) return next();
 
     try {
         const salt = await bcrypt.genSalt(SALT_ROUNDS);
@@ -52,6 +112,10 @@ userSchema.pre('save', async function(next) {
 
 // Method to compare input password with hashed password in DB
 userSchema.methods.comparePassword = async function(inputPassword) {
+    // OAuth users don't have passwords, so they can't use password comparison
+    if (this.oauthProvider !== 'local' || !this.password) {
+        return false;
+    }
     return await bcrypt.compare(inputPassword, this.password);
 };
 

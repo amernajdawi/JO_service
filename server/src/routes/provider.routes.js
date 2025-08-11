@@ -323,6 +323,45 @@ router.post('/profile-picture', protectRoute, isProvider, upload.single('profile
 
 /**
  * @swagger
+ * /providers/availability:
+ *   patch:
+ *     summary: Update provider availability
+ *     tags: [Providers]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               isAvailable:
+ *                 type: boolean
+ *                 description: Provider availability status
+ *     responses:
+ *       200:
+ *         description: Availability updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 provider:
+ *                   $ref: '#/components/schemas/Provider'
+ *       400:
+ *         description: Invalid request body
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Provider not found
+ */
+router.patch('/availability', protectRoute, isProvider, ProviderController.updateAvailability);
+
+/**
+ * @swagger
  * /providers/{id}:
  *   get:
  *     summary: Get a specific provider by ID

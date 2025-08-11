@@ -188,6 +188,21 @@ const providerSchema = new Schema({
         enum: ['active', 'suspended', 'deactivated'],
         default: 'active'
     },
+    isAvailable: {
+        type: Boolean,
+        default: true
+    },
+    fcmToken: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    notificationSettings: {
+        bookingUpdates: { type: Boolean, default: true },
+        chatMessages: { type: Boolean, default: true },
+        ratings: { type: Boolean, default: true },
+        promotions: { type: Boolean, default: true }
+    },
     // Fields to track document history
     createdAt: {
         type: Date,

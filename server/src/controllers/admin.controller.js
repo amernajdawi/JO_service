@@ -1,15 +1,21 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { generateToken } = require('../utils/jwt.utils');
 const Provider = require('../models/provider.model');
 const User = require('../models/user.model');
 const Booking = require('../models/booking.model');
 const mongoose = require('mongoose');
 
 // Admin credentials (in production, store in database)
-const ADMIN_CREDENTIALS = {
-  email: 'admin@joservice.com',
-  password: 'admin123' // This should be hashed in production
-};
+const ADMIN_CREDENTIALS = [
+  {
+    email: 'amer@joservice.com',
+    password: 'Amer&1234'
+  },
+  {
+    email: 'mohammed@joservice.com',
+    password: 'Moh&1234'
+  }
+];
 
 /**
  * Admin login
@@ -18,8 +24,12 @@ const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate credentials
-    if (email !== ADMIN_CREDENTIALS.email || password !== ADMIN_CREDENTIALS.password) {
+    // Validate credentials against multiple admin accounts
+    const adminAccount = ADMIN_CREDENTIALS.find(admin => 
+      admin.email === email && admin.password === password
+    );
+    
+    if (!adminAccount) {
       return res.status(401).json({
         success: false,
         message: 'Invalid admin credentials'
@@ -27,15 +37,12 @@ const adminLogin = async (req, res) => {
     }
 
     // Generate admin token
-    const adminToken = jwt.sign(
-      { 
-        userId: 'admin', 
-        email: email,
-        role: 'admin'
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    const adminToken = generateToken({
+      id: 'admin',
+      type: 'admin',
+      email: email,
+      role: 'admin'
+    });
 
     res.status(200).json({
       success: true,
@@ -165,6 +172,7 @@ const updateProviderStatus = async (req, res) => {
     // Build update object
     const updateData = {
       verificationStatus: status,
+      isVerified: status === 'verified', // Sync the boolean field
       verifiedAt: status === 'verified' ? new Date() : null,
       verifiedBy: adminInfo,
     };
@@ -367,6 +375,7 @@ const bulkUpdateProviders = async (req, res) => {
     // Build update object
     const updateData = {
       verificationStatus: status,
+      isVerified: status === 'verified', // Sync the boolean field
       verifiedAt: status === 'verified' ? new Date() : null,
       verifiedBy: req.auth.userId || req.auth.email || 'admin'
     };
@@ -468,6 +477,7 @@ const createProvider = async (req, res) => {
       availability: availability || {},
       serviceDescription: description || '',
       verificationStatus: 'verified', // Admin-created providers are pre-verified
+      isVerified: true, // Sync the boolean field
       verifiedAt: new Date(),
       verifiedBy: req.auth.userId || req.auth.email || 'admin'
     });

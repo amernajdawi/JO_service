@@ -1,7 +1,7 @@
 const Booking = require('../models/booking.model');
 const Provider = require('../models/provider.model');
 const mongoose = require('mongoose');
-const NotificationService = require('../services/notification.service');
+const notificationService = require('../services/notification.service');
 
 const BookingController = {
     // POST /api/bookings - Create a new booking (by User)
@@ -365,12 +365,8 @@ const BookingController = {
             const updatedBooking = await booking.save();
 
 
-            // Send notification about the status change
-            await NotificationService.sendBookingStatusNotification(
-                booking,
-                status,
-                userType
-            );
+            // Send push notification about the status change
+            await BookingController.sendBookingStatusNotification(booking, status, userType);
 
             // Populate details for the response
             const populatedBooking = await Booking.findById(updatedBooking._id)
@@ -525,6 +521,120 @@ const BookingController = {
         } catch (error) {
             console.error('Error reassigning booking:', error);
             res.status(500).json({ message: 'Failed to reassign booking', error: error.message });
+        }
+    },
+
+    // Send push notification for booking status changes
+    async sendBookingStatusNotification(booking, status, actorType) {
+        try {
+            const userId = booking.user._id;
+            const providerId = booking.provider._id;
+            const userFullName = booking.user.fullName || 'User';
+            const providerFullName = booking.provider.fullName || 'Provider';
+            const serviceType = booking.provider.serviceType || 'service';
+            const dateTime = new Date(booking.serviceDateTime).toLocaleString();
+
+            let userNotification, providerNotification;
+
+            switch (status) {
+                case 'pending':
+                    // New booking created (send to provider only)
+                    providerNotification = {
+                        title: 'New Booking Request',
+                        body: `${userFullName} has requested your ${serviceType} services on ${dateTime}.`,
+                        type: 'booking_created',
+                        data: {
+                            bookingId: booking._id.toString(),
+                            serviceType: serviceType,
+                            serviceDateTime: booking.serviceDateTime.toISOString()
+                        }
+                    };
+                    break;
+
+                case 'accepted':
+                    // Booking accepted (send to user only)
+                    userNotification = {
+                        title: 'Booking Accepted',
+                        body: `${providerFullName} has accepted your booking for ${serviceType} on ${dateTime}.`,
+                        type: 'booking_accepted',
+                        data: {
+                            bookingId: booking._id.toString(),
+                            serviceType: serviceType,
+                            serviceDateTime: booking.serviceDateTime.toISOString()
+                        }
+                    };
+                    break;
+
+                case 'declined_by_provider':
+                    // Booking declined (send to user only)
+                    userNotification = {
+                        title: 'Booking Declined',
+                        body: `${providerFullName} has declined your booking for ${serviceType} on ${dateTime}.`,
+                        type: 'booking_declined',
+                        data: {
+                            bookingId: booking._id.toString(),
+                            serviceType: serviceType,
+                            serviceDateTime: booking.serviceDateTime.toISOString()
+                        }
+                    };
+                    break;
+
+                case 'cancelled_by_user':
+                    // Booking cancelled (send to provider only)
+                    providerNotification = {
+                        title: 'Booking Cancelled',
+                        body: `${userFullName} has cancelled their booking for your ${serviceType} on ${dateTime}.`,
+                        type: 'booking_cancelled',
+                        data: {
+                            bookingId: booking._id.toString(),
+                            serviceType: serviceType,
+                            serviceDateTime: booking.serviceDateTime.toISOString()
+                        }
+                    };
+                    break;
+
+                case 'in_progress':
+                    // Service started (send to user only)
+                    userNotification = {
+                        title: 'Service Started',
+                        body: `${providerFullName} has started their ${serviceType} service for your booking.`,
+                        type: 'booking_started',
+                        data: {
+                            bookingId: booking._id.toString(),
+                            serviceType: serviceType,
+                            serviceDateTime: booking.serviceDateTime.toISOString()
+                        }
+                    };
+                    break;
+
+                case 'completed':
+                    // Service completed (send to user only)
+                    userNotification = {
+                        title: 'Service Completed',
+                        body: `${providerFullName} has completed their ${serviceType} service. Please rate your experience!`,
+                        type: 'booking_completed',
+                        data: {
+                            bookingId: booking._id.toString(),
+                            serviceType: serviceType,
+                            serviceDateTime: booking.serviceDateTime.toISOString()
+                        }
+                    };
+                    break;
+            }
+
+            // Send notifications
+            const promises = [];
+            if (userNotification) {
+                promises.push(notificationService.sendNotification(userId, userNotification));
+            }
+            if (providerNotification) {
+                promises.push(notificationService.sendNotificationToProvider(providerId, providerNotification));
+            }
+
+            await Promise.all(promises);
+        } catch (error) {
+            console.error('Error sending booking status notification:', error);
+            // Don't throw the error to prevent blocking the main booking process
         }
     }
 };

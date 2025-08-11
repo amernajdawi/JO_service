@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config(); // To access JWT_SECRET and JWT_EXPIRES_IN
+require('dotenv').config({ path: require('path').join(__dirname, '..', '..', '.env') }); // To access JWT_SECRET and JWT_EXPIRES_IN
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN;

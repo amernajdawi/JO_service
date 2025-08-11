@@ -1,227 +1,326 @@
-const Notification = require('../models/notification.model');
-const WebSocketService = require('./websocket.service');
+const admin = require('firebase-admin');
+const User = require('../models/user.model');
+const Provider = require('../models/provider.model');
 
 class NotificationService {
-    /**
-     * Create a new notification
-     * @param {Object} notificationData - The notification data
-     * @returns {Promise<Object>} - The created notification
-     */
-    static async createNotification(notificationData) {
-        try {
-            const notification = new Notification(notificationData);
-            const savedNotification = await notification.save();
-            
-            // Send real-time notification via WebSocket if available
-            try {
-                const wsPayload = {
-                    type: 'notification',
-                    data: savedNotification
-                };
-                
-                WebSocketService.sendToUser(
-                    notificationData.recipient.toString(), 
-                    notificationData.recipientModel,
-                    wsPayload
-                );
-            } catch (wsError) {
-                console.error('Error sending WebSocket notification:', wsError);
-                // Continue even if WebSocket fails - user will still see notification on next login
+  constructor() {
+    // Initialize Firebase Admin SDK
+    // Note: In production, you should use service account key file
+    // For development, you can use application default credentials
+    try {
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+        projectId: process.env.FIREBASE_PROJECT_ID || 'jo-service-marketplace'
+      });
+    } catch (error) {
+      // App already initialized
+      console.log('Firebase Admin already initialized');
+    }
+  }
+
+  /**
+   * Send notification to a specific user
+   * @param {string} userId - User ID
+   * @param {Object} notification - Notification object
+   * @param {string} notification.title - Notification title
+   * @param {string} notification.body - Notification body
+   * @param {string} notification.type - Notification type
+   * @param {Object} notification.data - Additional data
+   */
+  async sendNotification(userId, notification) {
+    try {
+      const user = await User.findById(userId);
+      if (!user || !user.fcmToken) {
+        console.log(`User ${userId} not found or no FCM token`);
+        return null;
+      }
+
+      // Check notification settings
+      if (!this.shouldSendNotification(user, notification.type)) {
+        console.log(`Notification ${notification.type} disabled for user ${userId}`);
+        return null;
+      }
+
+      const message = {
+        token: user.fcmToken,
+        notification: {
+          title: notification.title,
+          body: notification.body
+        },
+        data: {
+          type: notification.type,
+          ...notification.data
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'jo_service_channel',
+            priority: 'high',
+            defaultSound: true,
+            defaultVibrateTimings: true
+          }
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1
             }
-            
-            return savedNotification;
+          }
+        }
+      };
+
+      const response = await admin.messaging().send(message);
+      console.log(`Notification sent to user ${userId}:`, response);
+      return response;
         } catch (error) {
-            console.error('Error creating notification:', error);
-            throw error;
+      console.error('Error sending notification to user:', error);
+      return null;
         }
     }
 
     /**
-     * Send booking status notification to both user and provider
-     * @param {Object} booking - The booking object (populated with user and provider)
-     * @param {String} status - The new status
-     * @param {String} actorType - The type of user who performed the action ('user' or 'provider')
-     */
-    static async sendBookingStatusNotification(booking, status, actorType) {
-        try {
-            const userId = booking.user._id;
-            const providerId = booking.provider._id;
-            const userFullName = booking.user.fullName || 'User';
-            const providerFullName = booking.provider.fullName || 'Provider';
-            const serviceType = booking.provider.serviceType || 'service';
-            const dateTime = new Date(booking.serviceDateTime).toLocaleString();
-            
-            let userNotification, providerNotification;
-            
-            switch (status) {
-                case 'pending':
-                    // New booking created (send to provider only)
-                    providerNotification = {
-                        recipient: providerId,
-                        recipientModel: 'Provider',
-                        type: 'booking_created',
-                        title: 'New Booking Request',
-                        message: `${userFullName} has requested your ${serviceType} services on ${dateTime}.`,
-                        relatedBooking: booking._id
-                    };
-                    break;
-                    
-                case 'accepted':
-                    // Booking accepted (send to user only)
-                    userNotification = {
-                        recipient: userId,
-                        recipientModel: 'User',
-                        type: 'booking_accepted',
-                        title: 'Booking Accepted',
-                        message: `${providerFullName} has accepted your booking for ${serviceType} on ${dateTime}.`,
-                        relatedBooking: booking._id
-                    };
-                    break;
-                    
-                case 'declined_by_provider':
-                    // Booking declined (send to user only)
-                    userNotification = {
-                        recipient: userId,
-                        recipientModel: 'User',
-                        type: 'booking_declined',
-                        title: 'Booking Declined',
-                        message: `${providerFullName} has declined your booking for ${serviceType} on ${dateTime}.`,
-                        relatedBooking: booking._id
-                    };
-                    break;
-                    
-                case 'cancelled_by_user':
-                    // Booking cancelled (send to provider only)
-                    providerNotification = {
-                        recipient: providerId,
-                        recipientModel: 'Provider',
-                        type: 'booking_cancelled',
-                        title: 'Booking Cancelled',
-                        message: `${userFullName} has cancelled their booking for your ${serviceType} on ${dateTime}.`,
-                        relatedBooking: booking._id
-                    };
-                    break;
-                    
-                case 'in_progress':
-                    // Service started (send to user only)
-                    userNotification = {
-                        recipient: userId,
-                        recipientModel: 'User',
-                        type: 'booking_in_progress',
-                        title: 'Service Started',
-                        message: `${providerFullName} has started their ${serviceType} service for your booking.`,
-                        relatedBooking: booking._id
-                    };
-                    break;
-                    
-                case 'completed':
-                    // Service completed (send to user only)
-                    userNotification = {
-                        recipient: userId,
-                        recipientModel: 'User',
-                        type: 'booking_completed',
-                        title: 'Service Completed',
-                        message: `${providerFullName} has completed their ${serviceType} service. Please rate your experience!`,
-                        relatedBooking: booking._id
-                    };
-                    break;
+   * Send notification to a specific provider
+   * @param {string} providerId - Provider ID
+   * @param {Object} notification - Notification object
+   */
+  async sendNotificationToProvider(providerId, notification) {
+    try {
+      const provider = await Provider.findById(providerId);
+      if (!provider || !provider.fcmToken) {
+        console.log(`Provider ${providerId} not found or no FCM token`);
+        return null;
+      }
+
+      // Check notification settings
+      if (!this.shouldSendNotification(provider, notification.type)) {
+        console.log(`Notification ${notification.type} disabled for provider ${providerId}`);
+        return null;
+      }
+
+      const message = {
+        token: provider.fcmToken,
+        notification: {
+          title: notification.title,
+          body: notification.body
+        },
+        data: {
+          type: notification.type,
+          ...notification.data
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'jo_service_channel',
+            priority: 'high',
+            defaultSound: true,
+            defaultVibrateTimings: true
+          }
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1
             }
-            
-            // Send notifications
-            const promises = [];
-            if (userNotification) {
-                promises.push(this.createNotification(userNotification));
-            }
-            if (providerNotification) {
-                promises.push(this.createNotification(providerNotification));
-            }
-            
-            await Promise.all(promises);
+          }
+        }
+      };
+
+      const response = await admin.messaging().send(message);
+      console.log(`Notification sent to provider ${providerId}:`, response);
+      return response;
+    } catch (error) {
+      console.error('Error sending notification to provider:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Send notification to multiple users
+   * @param {Array} userIds - Array of user IDs
+   * @param {Object} notification - Notification object
+   */
+  async sendNotificationToUsers(userIds, notification) {
+    const results = [];
+    for (const userId of userIds) {
+      const result = await this.sendNotification(userId, notification);
+      results.push({ userId, result });
+    }
+    return results;
+  }
+
+  /**
+   * Send notification to multiple providers
+   * @param {Array} providerIds - Array of provider IDs
+   * @param {Object} notification - Notification object
+   */
+  async sendNotificationToProviders(providerIds, notification) {
+    const results = [];
+    for (const providerId of providerIds) {
+      const result = await this.sendNotificationToProvider(providerId, notification);
+      results.push({ providerId, result });
+    }
+    return results;
+  }
+
+  /**
+   * Send notification to topic subscribers
+   * @param {string} topic - Topic name
+   * @param {Object} notification - Notification object
+   */
+  async sendNotificationToTopic(topic, notification) {
+    try {
+      const message = {
+        topic: topic,
+        notification: {
+          title: notification.title,
+          body: notification.body
+        },
+        data: {
+          type: notification.type,
+          ...notification.data
+        }
+      };
+
+      const response = await admin.messaging().send(message);
+      console.log(`Notification sent to topic ${topic}:`, response);
+      return response;
+    } catch (error) {
+      console.error('Error sending notification to topic:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Subscribe user to topic
+   * @param {string} fcmToken - FCM token
+   * @param {string} topic - Topic name
+   */
+  async subscribeToTopic(fcmToken, topic) {
+    try {
+      const response = await admin.messaging().subscribeToTopic([fcmToken], topic);
+      console.log(`Subscribed to topic ${topic}:`, response);
+      return response;
+    } catch (error) {
+      console.error('Error subscribing to topic:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Unsubscribe user from topic
+   * @param {string} fcmToken - FCM token
+   * @param {string} topic - Topic name
+   */
+  async unsubscribeFromTopic(fcmToken, topic) {
+    try {
+      const response = await admin.messaging().unsubscribeFromTopic([fcmToken], topic);
+      console.log(`Unsubscribed from topic ${topic}:`, response);
+      return response;
         } catch (error) {
-            console.error('Error sending booking status notification:', error);
-            // Don't throw the error to prevent blocking the main booking process
+      console.error('Error unsubscribing from topic:', error);
+      return null;
         }
     }
 
     /**
-     * Mark a notification as read
-     * @param {String} notificationId - The notification ID
-     */
-    static async markAsRead(notificationId) {
-        try {
-            return await Notification.findByIdAndUpdate(
-                notificationId,
-                { isRead: true },
-                { new: true }
-            );
+   * Check if notification should be sent based on user settings
+   * @param {Object} user - User or provider object
+   * @param {string} notificationType - Type of notification
+   */
+  shouldSendNotification(user, notificationType) {
+    if (!user.notificationSettings) {
+      return true; // Default to true if no settings
+    }
+
+    switch (notificationType) {
+      case 'booking_created':
+      case 'booking_accepted':
+      case 'booking_declined':
+      case 'booking_started':
+      case 'booking_completed':
+      case 'booking_cancelled':
+        return user.notificationSettings.bookingUpdates;
+      
+      case 'chat_message':
+      case 'new_message':
+        return user.notificationSettings.chatMessages;
+      
+      case 'new_rating':
+      case 'rating_received':
+        return user.notificationSettings.ratings;
+      
+      case 'promotion':
+      case 'special_offer':
+        return user.notificationSettings.promotions;
+      
+      default:
+        return true;
+    }
+  }
+
+  /**
+   * Update FCM token for user
+   * @param {string} userId - User ID
+   * @param {string} fcmToken - FCM token
+   */
+  async updateUserFcmToken(userId, fcmToken) {
+    try {
+      await User.findByIdAndUpdate(userId, { fcmToken });
+      console.log(`FCM token updated for user ${userId}`);
+      return true;
         } catch (error) {
-            console.error('Error marking notification as read:', error);
-            throw error;
+      console.error('Error updating user FCM token:', error);
+      return false;
         }
     }
 
     /**
-     * Mark all notifications as read for a user
-     * @param {String} userId - The user ID
-     * @param {String} userType - The user type ('User' or 'Provider')
-     */
-    static async markAllAsRead(userId, userType) {
-        try {
-            return await Notification.updateMany(
-                { recipient: userId, recipientModel: userType, isRead: false },
-                { isRead: true }
-            );
+   * Update FCM token for provider
+   * @param {string} providerId - Provider ID
+   * @param {string} fcmToken - FCM token
+   */
+  async updateProviderFcmToken(providerId, fcmToken) {
+    try {
+      await Provider.findByIdAndUpdate(providerId, { fcmToken });
+      console.log(`FCM token updated for provider ${providerId}`);
+      return true;
         } catch (error) {
-            console.error('Error marking all notifications as read:', error);
-            throw error;
+      console.error('Error updating provider FCM token:', error);
+      return false;
         }
     }
 
     /**
-     * Get notifications for a user
-     * @param {String} userId - The user ID
-     * @param {String} userType - The user type ('User' or 'Provider')
-     * @param {Object} options - Additional options (limit, offset, unreadOnly)
-     */
-    static async getUserNotifications(userId, userType, options = {}) {
-        try {
-            const { limit = 20, page = 1, unreadOnly = false } = options;
-            const skip = (page - 1) * limit;
-            
-            const query = { 
-                recipient: userId, 
-                recipientModel: userType 
-            };
-            
-            if (unreadOnly) {
-                query.isRead = false;
-            }
-            
-            const [notifications, total] = await Promise.all([
-                Notification.find(query)
-                    .sort({ createdAt: -1 })
-                    .skip(skip)
-                    .limit(limit)
-                    .populate('relatedBooking', 'serviceDateTime status')
-                    .lean(),
-                Notification.countDocuments(query)
-            ]);
-            
-            return {
-                notifications,
-                total,
-                unreadCount: unreadOnly ? total : await Notification.countDocuments({
-                    ...query,
-                    isRead: false
-                }),
-                page,
-                totalPages: Math.ceil(total / limit)
-            };
+   * Remove FCM token for user
+   * @param {string} userId - User ID
+   */
+  async removeUserFcmToken(userId) {
+    try {
+      await User.findByIdAndUpdate(userId, { fcmToken: null });
+      console.log(`FCM token removed for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error('Error removing user FCM token:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove FCM token for provider
+   * @param {string} providerId - Provider ID
+   */
+  async removeProviderFcmToken(providerId) {
+    try {
+      await Provider.findByIdAndUpdate(providerId, { fcmToken: null });
+      console.log(`FCM token removed for provider ${providerId}`);
+      return true;
         } catch (error) {
-            console.error('Error getting user notifications:', error);
-            throw error;
+      console.error('Error removing provider FCM token:', error);
+      return false;
         }
     }
 }
 
-module.exports = NotificationService; 
+module.exports = new NotificationService(); 

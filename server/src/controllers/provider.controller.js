@@ -6,7 +6,7 @@ const ProviderController = {
     // GET /api/providers - Get list of providers with filtering and pagination
     async getAllProviders(req, res) {
         const { serviceType, page = 1, limit = 10, // Basic filters
-                minRating, // Optional filters
+                minRating, onlyAvailable, // Optional filters
                 // Geospatial filter params (example)
                 longitude, latitude, maxDistance // distance in meters
               } = req.query;
@@ -24,6 +24,8 @@ const ProviderController = {
 
             // Only show verified providers to users
             query.verificationStatus = 'verified';
+            
+            console.log('🔍 getAllProviders query:', JSON.stringify(query, null, 2));
 
             // Apply Filters
             if (serviceType) {
@@ -58,7 +60,10 @@ const ProviderController = {
                 }
             }
 
-            // TODO: Add filter for availability (more complex, depends on availabilityDetails format)
+            // Filter by availability
+            if (onlyAvailable === 'true') {
+                query.isAvailable = true;
+            }
 
             // Query using pagination (manual approach shown, mongoose-paginate-v2 is an alternative)
             const skip = (options.page - 1) * options.limit;
@@ -69,6 +74,8 @@ const ProviderController = {
                                       .limit(options.limit);
 
             const totalProviders = await Provider.countDocuments(query);
+            
+            console.log(`🔍 getAllProviders results: ${providers.length} providers found, total: ${totalProviders}`);
             
             res.status(200).json({
                 providers,
@@ -129,6 +136,7 @@ const ProviderController = {
             'profilePictureUrl',
             'hourlyRate',
             'availability',
+            'isAvailable', // ✅ ADDED: Allow updating availability status
             // Location and address will be handled separately below
         ];
 
@@ -324,16 +332,19 @@ const ProviderController = {
             const {
                 query,             // Text search query
                 category,          // Service category
+                location,          // Location filter
                 minRating,         // Minimum rating
                 maxPrice,          // Maximum hourly rate
+                maxDistance,       // Maximum distance in km
+                onlyAvailable,     // Only show available providers
                 tags,              // Comma-separated service tags
-                sort = 'rating',   // Sort field (rating, price)
+                sort = 'rating',   // Sort field (rating, price, distance)
                 order = 'desc',    // Sort order (asc, desc)
                 page = 1,          // Page number
                 limit = 10,        // Results per page
-                verified = false   // Whether to only show verified providers
+                latitude,          // User's latitude for distance calculation
+                longitude,         // User's longitude for distance calculation
             } = req.query;
-            
             
             // Build the query object
             const queryObj = {};
@@ -342,49 +353,150 @@ const ProviderController = {
             queryObj.accountStatus = 'active';
             queryObj.verificationStatus = 'verified';
             
+            console.log('🔍 Search parameters:', {
+                query, location, latitude, longitude, maxDistance,
+                category, minRating, maxPrice, onlyAvailable
+            });
+            
             // Apply text search if query is provided
             if (query && query.trim()) {
-                queryObj.$text = { $search: query };
+                // Use text search if available, otherwise use regex
+                if (query.length > 2) {
+                    queryObj.$or = [
+                        { fullName: { $regex: query, $options: 'i' } },
+                        { companyName: { $regex: query, $options: 'i' } },
+                        { serviceType: { $regex: query, $options: 'i' } },
+                        { serviceDescription: { $regex: query, $options: 'i' } }
+                    ];
+                }
             }
             
-            // Filter by category
-            if (category) {
-                queryObj.serviceCategory = category;
+            // Filter by category/service type
+            if (category && category !== 'All') {
+                queryObj.serviceType = { $regex: new RegExp(`^${category}$`, 'i') };
+            }
+            
+            // Filter by location with improved text matching
+            if (location && location.trim()) {
+                queryObj.$or = queryObj.$or || [];
+                
+                // Split location into words for more flexible matching
+                const locationWords = location.trim().split(/\s+/).filter(word => word.length > 1);
+                
+                // Create multiple search patterns for better matching
+                const searchPatterns = [
+                    location, // Exact location string
+                    ...locationWords, // Individual words
+                    location.replace(/\s+/g, '.*'), // Words with wildcards
+                    // Add street name patterns (remove numbers for better matching)
+                    ...locationWords.filter(word => !/\d/.test(word)), // Words without numbers
+                    location.replace(/\d+/g, '').trim(), // Location without numbers
+                ];
+                
+                // Add patterns for each searchable field
+                searchPatterns.forEach(pattern => {
+                    if (pattern.length > 1) { // Only add patterns with meaningful length
+                        queryObj.$or.push(
+                            { 'location.city': { $regex: pattern, $options: 'i' } },
+                            { 'location.address': { $regex: pattern, $options: 'i' } },
+                            { serviceAreas: { $regex: pattern, $options: 'i' } }
+                        );
+                    }
+                });
+                
+                console.log(`🔍 Location search patterns: ${searchPatterns.join(', ')}`);
             }
             
             // Filter by minimum rating
-            if (minRating) {
+            if (minRating && parseFloat(minRating) > 0) {
                 queryObj.averageRating = { $gte: parseFloat(minRating) };
             }
             
             // Filter by maximum price
-            if (maxPrice) {
+            if (maxPrice && parseFloat(maxPrice) > 0) {
                 queryObj.hourlyRate = { $lte: parseFloat(maxPrice) };
             }
             
-            // Filter by service tags
-            if (tags) {
-                const tagArray = tags.split(',').map(tag => tag.trim());
-                queryObj.serviceTags = { $in: tagArray };
+            // Enable geospatial search when coordinates are provided
+            if (latitude && longitude && maxDistance) {
+                const lat = parseFloat(latitude);
+                const lon = parseFloat(longitude);
+                const distance = parseFloat(maxDistance); // Distance in km
+                if (!isNaN(lat) && !isNaN(lon) && !isNaN(distance)) {
+                    // STRICT DISTANCE SEARCH: Only return providers within the specified distance
+                    console.log(`🔍 Strict distance search: Only providers within ${distance}km will be returned`);
+                    
+                    // For geospatial search, only include providers with valid coordinates
+                    // MongoDB requires $nearSphere to be the first condition
+                    queryObj['location.coordinates'] = {
+                        $nearSphere: {
+                            $geometry: {
+                                type: 'Point',
+                                coordinates: [lon, lat]
+                            },
+                            $maxDistance: distance * 1000 // Convert km to meters
+                        }
+                    };
+                    
+                    // Add additional conditions for valid coordinates
+                    queryObj.$and = queryObj.$and || [];
+                    queryObj.$and.push({
+                        'location.coordinates': {
+                            $exists: true,
+                            $ne: []
+                        }
+                    });
+                    
+                    console.log(`🔍 Geospatial search: lat=${lat}, lon=${lon}, distance=${distance}km (${distance * 1000}m)`);
+                    
+                    // Execute the geospatial query only - NO TEXT FALLBACK
+                    const geoProviders = await Provider.find(queryObj).select('-password');
+                    
+                    console.log(`🔍 Geospatial results: ${geoProviders.length} providers within ${distance}km`);
+                    
+                    // Apply pagination to geospatial results only
+                    const startIndex = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+                    const endIndex = startIndex + parseInt(limit, 10);
+                    const paginatedProviders = geoProviders.slice(startIndex, endIndex);
+                    
+                    res.status(200).json({
+                        providers: paginatedProviders,
+                        currentPage: parseInt(page, 10),
+                        totalPages: Math.ceil(geoProviders.length / parseInt(limit, 10)),
+                        totalProviders: geoProviders.length,
+                        hasMore: endIndex < geoProviders.length
+                    });
+                    return;
+                }
             }
             
-            // Note: All providers shown to users are verified by default
+            // Filter by availability
+            if (onlyAvailable === 'true') {
+                queryObj.isAvailable = true;
+            }
             
+            // Filter by service tags
+            if (tags && tags.trim()) {
+                const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+                if (tagArray.length > 0) {
+                    queryObj.serviceTags = { $in: tagArray };
+                }
+            }
             
             // Set up sorting
             let sortObj = {};
             if (sort === 'rating') {
                 sortObj.averageRating = order === 'asc' ? 1 : -1;
+                sortObj.totalRatings = order === 'asc' ? 1 : -1; // Secondary sort
             } else if (sort === 'price') {
                 sortObj.hourlyRate = order === 'asc' ? 1 : -1;
-            }
-            // Add secondary sort by totalRatings when sorting by rating
-            if (sort === 'rating') {
-                sortObj.totalRatings = order === 'asc' ? 1 : -1;
+            } else if (sort === 'distance' && latitude && longitude) {
+                // For distance sorting, we'll use a different approach
+                // since geospatial queries have sorting limitations
+                sortObj.averageRating = -1; // Default to rating sort for distance queries
             }
             // Always add _id as final sort to ensure consistent pagination
             sortObj._id = 1;
-            
             
             // Calculate pagination
             const pageNum = parseInt(page, 10);
@@ -392,18 +504,58 @@ const ProviderController = {
             const skip = (pageNum - 1) * limitNum;
             
             // Execute the query with pagination
+            console.log('🔍 Final query object:', JSON.stringify(queryObj, null, 2));
+            let providersQuery = Provider.find(queryObj)
+                .select('-password') // Exclude sensitive data
+                .skip(skip)
+                .limit(limitNum);
+            
+            // Apply sorting (except for distance which is handled by geospatial query)
+            if (sort !== 'distance') {
+                providersQuery = providersQuery.sort(sortObj);
+            }
+            
             const [providers, total] = await Promise.all([
-                Provider.find(queryObj)
-                    .select('-password') // Exclude sensitive data
-                    .sort(sortObj)
-                    .skip(skip)
-                    .limit(limitNum),
+                providersQuery,
                 Provider.countDocuments(queryObj)
             ]);
             
+            console.log(`🔍 Search results: ${providers.length} providers found out of ${total} total`);
+            
+            // Debug: Log provider locations to see what we're working with
+            if (providers.length > 0) {
+                console.log('🔍 Provider locations found:');
+                providers.forEach((provider, index) => {
+                    let distanceInfo = '';
+                    if (latitude && longitude && provider.location?.coordinates && provider.location.coordinates.length === 2) {
+                        const providerLon = provider.location.coordinates[0];
+                        const providerLat = provider.location.coordinates[1];
+                        const userLat = parseFloat(latitude);
+                        const userLon = parseFloat(longitude);
+                        
+                        // Calculate distance using Haversine formula
+                        const R = 6371; // Earth's radius in km
+                        const dLat = (providerLat - userLat) * Math.PI / 180;
+                        const dLon = (providerLon - userLon) * Math.PI / 180;
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                Math.cos(userLat * Math.PI / 180) * Math.cos(providerLat * Math.PI / 180) *
+                                Math.sin(dLon/2) * Math.sin(dLon/2);
+                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        const distance = R * c;
+                        
+                        distanceInfo = ` (Distance: ${distance.toFixed(2)}km)`;
+                    }
+                    
+                    console.log(`  ${index + 1}. ${provider.fullName}:${distanceInfo}`);
+                    console.log(`     Location: ${provider.location?.address || 'No address'}`);
+                    console.log(`     City: ${provider.location?.city || 'No city'}`);
+                    console.log(`     Coordinates: ${provider.location?.coordinates || 'No coordinates'}`);
+                    console.log(`     Service Areas: ${provider.serviceAreas || 'None'}`);
+                });
+            }
+            
             // Calculate total pages
             const totalPages = Math.ceil(total / limitNum);
-            
             
             res.status(200).json({
                 providers,
@@ -485,6 +637,36 @@ const ProviderController = {
         } catch (error) {
             console.error('Error finding nearby providers:', error);
             res.status(500).json({ message: 'Failed to find nearby providers', error: error.message });
+        }
+    },
+
+    // PATCH /api/providers/availability - Update provider availability
+    async updateAvailability(req, res) {
+        try {
+            const { isAvailable } = req.body;
+            const providerId = req.auth.id; // Fixed: Changed from req.user.id to req.auth.id
+
+            if (typeof isAvailable !== 'boolean') {
+                return res.status(400).json({ message: 'isAvailable must be a boolean' });
+            }
+
+            const provider = await Provider.findByIdAndUpdate(
+                providerId,
+                { isAvailable },
+                { new: true }
+            ).select('-password');
+
+            if (!provider) {
+                return res.status(404).json({ message: 'Provider not found' });
+            }
+
+            res.status(200).json({
+                message: 'Availability updated successfully',
+                provider
+            });
+        } catch (error) {
+            console.error('Error updating availability:', error);
+            res.status(500).json({ message: 'Failed to update availability', error: error.message });
         }
     },
 
@@ -573,7 +755,12 @@ const ProviderController = {
             
             res.status(200).json({ 
                 message: 'Location updated successfully',
-                location: updatedProvider.location
+                location: updatedProvider.location,
+                provider: {
+                    fullName: updatedProvider.fullName,
+                    businessName: updatedProvider.businessName,
+                    email: updatedProvider.email
+                }
             });
         } catch (error) {
             console.error('Error updating provider location:', error);
