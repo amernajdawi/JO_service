@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/chat_message.model.dart';
+import '../constants/api_config.dart';
 import './auth_service.dart';
 
 class ChatService {
@@ -29,17 +30,8 @@ class ChatService {
       return false;
     }
 
-    // Determine WebSocket URL based on platform
-    String wsBaseUrl;
-    if (kIsWeb) {
-      wsBaseUrl = 'ws://localhost:3001'; // Use ws:// for web
-    } else if (Platform.isIOS) {
-      // iOS device or simulator - use Mac's IP address
-              wsBaseUrl = 'ws://10.46.6.68:3001';
-    } else {
-      // Android emulator
-              wsBaseUrl = 'ws://10.0.2.2:3001';
-    }
+    // Production WebSocket URL for all platforms
+    String wsBaseUrl = ApiConfig.wsBaseUrl;
 
     final url =
         Uri.parse('$wsBaseUrl?token=$token'); // Pass token as query param

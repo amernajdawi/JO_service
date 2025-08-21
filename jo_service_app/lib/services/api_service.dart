@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/provider_model.dart';
 import '../models/chat_message.model.dart';
 import '../models/user_model.dart';
+import '../constants/api_config.dart';
 import 'auth_service.dart';
 
 // New class to model the response from fetching a list of providers
@@ -36,20 +37,11 @@ class ProviderListResponse {
 
 class ApiService {
   static String getBaseUrl() {
-    if (kIsWeb) {
-      // Running on the web
-      return 'http://localhost:3001/api';
-    } else if (Platform.isIOS) {
-      // iOS device/simulator - use Mac's network IP
-      // This IP address should match your Mac's current network IP
-      return 'http://10.46.6.68:3001/api'; // Using network IP for iOS connectivity
-    } else {
-      // Android emulator
-      return 'http://10.0.2.2:3001/api';
-    }
+    // Production backend URL for all platforms
+    return ApiConfig.apiBaseUrl;
   }
 
-  // static const String _baseUrl = 'http://10.0.2.2:3001/api'; // Old static way
+
 
   // Generic HTTP methods for API calls
   Future<Map<String, dynamic>> get(String endpoint) async {

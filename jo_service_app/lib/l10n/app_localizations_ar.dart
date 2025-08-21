@@ -769,7 +769,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterMessage => 'أدخل رسالتك';
 
   @override
-  String get failedToSendMessage => 'فشل في إرسال الرسالة';
+  String get failedToSendMessage =>
+      'فشل في إرسال الرسالة. يرجى المحاولة مرة أخرى.';
 
   @override
   String get selectImage => 'اختر صورة';
@@ -917,6 +918,41 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get contactSupport => 'اتصل بالدعم';
+
+  @override
+  String get contactSupportDescription =>
+      'هل لديك مشكلة أو تريد الإبلاغ عن شيء ما؟ اتصل بنا مباشرة';
+
+  @override
+  String get callUs => 'اتصل بنا';
+
+  @override
+  String get supportMessage => 'رسالة الدعم';
+
+  @override
+  String get describeYourIssue => 'صف مشكلتك أو قلقك...';
+
+  @override
+  String get issueWithProvider => 'مشكلة مع مقدم الخدمة';
+
+  @override
+  String get generalInquiry => 'استفسار عام';
+
+  @override
+  String get technicalProblem => 'مشكلة تقنية';
+
+  @override
+  String get billingIssue => 'مشكلة في الفواتير';
+
+  @override
+  String get other => 'أخرى';
+
+  @override
+  String get selectIssueType => 'اختر نوع المشكلة';
+
+  @override
+  String get messageSentSuccessfully =>
+      'تم إرسال الرسالة بنجاح! سنرد عليك قريباً.';
 
   @override
   String get areYouSureSignOut => 'هل أنت متأكد من تسجيل الخروج؟';

@@ -774,7 +774,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterMessage => 'Enter your message';
 
   @override
-  String get failedToSendMessage => 'Failed to send message';
+  String get failedToSendMessage => 'Failed to send message. Please try again.';
 
   @override
   String get selectImage => 'Select Image';
@@ -924,6 +924,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contactSupport => 'Contact Support';
+
+  @override
+  String get contactSupportDescription =>
+      'Having an issue or want to report something? Contact us directly';
+
+  @override
+  String get callUs => 'Call Us';
+
+  @override
+  String get supportMessage => 'Support Message';
+
+  @override
+  String get describeYourIssue => 'Describe your issue or concern...';
+
+  @override
+  String get issueWithProvider => 'Issue with Provider';
+
+  @override
+  String get generalInquiry => 'General Inquiry';
+
+  @override
+  String get technicalProblem => 'Technical Problem';
+
+  @override
+  String get billingIssue => 'Billing Issue';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get selectIssueType => 'Select Issue Type';
+
+  @override
+  String get messageSentSuccessfully =>
+      'Message sent successfully! We\'ll get back to you soon.';
 
   @override
   String get areYouSureSignOut => 'Are you sure you want to sign out?';

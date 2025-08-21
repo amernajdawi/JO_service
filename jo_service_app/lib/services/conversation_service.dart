@@ -3,16 +3,12 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
 import '../models/chat_conversation.dart';
+import '../constants/api_config.dart';
 
 class ConversationService {
   static String getBaseUrl() {
-    if (kIsWeb) {
-      return 'http://localhost:3001';
-    } else if (Platform.isIOS) {
-              return 'http://10.46.6.68:3001'; // Updated to current network IP
-    } else {
-              return 'http://10.0.2.2:3001';
-    }
+    // Production backend URL for all platforms
+    return ApiConfig.productionBaseUrl;
   }
 
   static String get baseImageUrl => getBaseUrl();

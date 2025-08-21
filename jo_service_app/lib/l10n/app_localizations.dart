@@ -1601,7 +1601,7 @@ abstract class AppLocalizations {
   /// No description provided for @failedToSendMessage.
   ///
   /// In en, this message translates to:
-  /// **'Failed to send message'**
+  /// **'Failed to send message. Please try again.'**
   String get failedToSendMessage;
 
   /// No description provided for @selectImage.
@@ -1897,6 +1897,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact Support'**
   String get contactSupport;
+
+  /// No description provided for @contactSupportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Having an issue or want to report something? Contact us directly'**
+  String get contactSupportDescription;
+
+  /// No description provided for @callUs.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Us'**
+  String get callUs;
+
+  /// No description provided for @supportMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Message'**
+  String get supportMessage;
+
+  /// No description provided for @describeYourIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your issue or concern...'**
+  String get describeYourIssue;
+
+  /// No description provided for @issueWithProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue with Provider'**
+  String get issueWithProvider;
+
+  /// No description provided for @generalInquiry.
+  ///
+  /// In en, this message translates to:
+  /// **'General Inquiry'**
+  String get generalInquiry;
+
+  /// No description provided for @technicalProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical Problem'**
+  String get technicalProblem;
+
+  /// No description provided for @billingIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing Issue'**
+  String get billingIssue;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @selectIssueType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Issue Type'**
+  String get selectIssueType;
+
+  /// No description provided for @messageSentSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent successfully! We\'ll get back to you soon.'**
+  String get messageSentSuccessfully;
 
   /// No description provided for @areYouSureSignOut.
   ///
